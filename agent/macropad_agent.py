@@ -9,9 +9,12 @@ Responsibilities:
   4. Hot-reload config/profiles.json whenever it changes on disk.
 
 Usage:
-    python3 agent/macropad_agent.py              # run the agent
+    python3 agent/macropad_agent.py              # run the agent + editor
     python3 agent/macropad_agent.py whoami       # print frontmost bundle IDs
     python3 agent/macropad_agent.py ports        # list candidate serial ports
+
+The editor is served on http://127.0.0.1:8765 from inside this process.
+Set MACROPAD_UI_PORT to move it, or MACROPAD_NO_UI=1 to run headless.
 
 Requires Accessibility permission for whatever runs this (Terminal, iTerm,
 or the packaged app). System Settings > Privacy & Security > Accessibility.
@@ -29,6 +32,8 @@ from serial.tools import list_ports
 
 from AppKit import NSWorkspace
 from pynput.keyboard import Controller, Key
+
+import server
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = Path(os.environ.get("MACROPAD_CONFIG", ROOT / "config" / "profiles.json"))
@@ -211,6 +216,25 @@ def frontmost_bundle_id():
     return app.bundleIdentifier(), app.localizedName()
 
 
+# NSApplicationActivationPolicyRegular — apps with a Dock icon. Filters out
+# the agents and helpers that would otherwise flood the "add app" list.
+ACTIVATION_POLICY_REGULAR = 0
+
+
+def running_apps():
+    """Apps the user could plausibly want a profile for, for the editor."""
+    apps = []
+    for app in NSWorkspace.sharedWorkspace().runningApplications():
+        if app.activationPolicy() != ACTIVATION_POLICY_REGULAR:
+            continue
+        bundle_id = app.bundleIdentifier()
+        if not bundle_id:
+            continue
+        apps.append({"bundleId": bundle_id, "name": app.localizedName() or bundle_id})
+    apps.sort(key=lambda a: a["name"].lower())
+    return apps
+
+
 # ------------------------------------------------------------------- loop ---
 
 def push_layer(port, profile):
@@ -246,6 +270,19 @@ def main():
     profile = config.resolve(None)
     last_app_poll = 0.0
     last_ping = 0.0
+    last_app_list = 0.0
+
+    state = server.State()
+    if os.environ.get("MACROPAD_NO_UI"):
+        print("[agent] editor disabled (MACROPAD_NO_UI)")
+    else:
+        try:
+            ui_port = server.serve(CONFIG_PATH, state)
+            print(f"[agent] editor on http://127.0.0.1:{ui_port}")
+        except OSError as exc:
+            # Almost always "address already in use" from a second copy of
+            # the agent. Not fatal — the pad still works without the editor.
+            print(f"[agent] editor unavailable: {exc}")
 
     print("[agent] running. Ctrl-C to stop.")
 
@@ -254,14 +291,17 @@ def main():
         if port is None:
             device = find_port()
             if device is None:
+                state.update(connected=False, port=None)
                 time.sleep(1.0)
                 continue
             try:
                 port = serial.Serial(device, 115200, timeout=0)
                 buf.clear()
                 current_bundle = object()
+                state.update(connected=True, port=device)
                 print(f"[agent] connected to {device}")
             except serial.SerialException:
+                state.update(connected=False, port=None)
                 time.sleep(1.0)
                 continue
 
@@ -278,12 +318,20 @@ def main():
             if bundle_id != current_bundle:
                 current_bundle = bundle_id
                 profile = config.resolve(bundle_id)
+                state.update(bundleId=bundle_id, appName=name, profileName=profile["name"])
                 print(f"[agent] {name} ({bundle_id}) -> {profile['name']}")
                 try:
                     push_layer(port, profile)
                 except serial.SerialException:
                     port = None
                     continue
+
+        # --- running apps, for the editor's app picker -----------------------
+        # Much heavier than the frontmost check, and it only feeds a UI that
+        # polls on demand, so it runs on a slow cadence of its own.
+        if now - last_app_list > 5.0:
+            last_app_list = now
+            state.update(runningApps=running_apps())
 
         # --- keepalive ------------------------------------------------------
         if now - last_ping > 2.0:
@@ -306,6 +354,7 @@ def main():
             except Exception:
                 pass
             port = None
+            state.update(connected=False, port=None)
             continue
 
         while True:

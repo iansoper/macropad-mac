@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Only needed to run the test suite. The server tests are stdlib-only and
+# run anywhere; the agent loop itself still needs a Mac and real hardware.
+pytest>=8.0

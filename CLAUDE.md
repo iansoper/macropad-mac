@@ -74,15 +74,27 @@ it participates in liveness automatically.
   Never call a blocking `readline()` — check `in_waiting` first.
 - **Never let a bad mapping crash the agent.** `run_action` catches broadly on
   purpose. A typo in a user's JSON should log and continue.
+- **The editor API binds to `127.0.0.1` and must stay there.** Profiles carry
+  `shell` and `applescript` actions, so write access to `/api/config` is
+  arbitrary code execution on the next key press. No CORS headers, no `0.0.0.0`,
+  no tunnels.
+- **AppKit and pyserial belong to the main loop.** HTTP handlers run on other
+  threads and must read `server.State` instead of calling `NSWorkspace` or
+  touching the serial port.
+- **Config writes must stay atomic.** The agent reloads on mtime change, so a
+  non-atomic write can be read half-finished. Use `write_config_atomically`.
 
 ## Layout
 
 ```
-firmware/boot.py       enables usb_cdc.data
-firmware/code.py       event reporting + layer rendering
+firmware/boot.py         enables usb_cdc.data
+firmware/code.py         event reporting + layer rendering
 agent/macropad_agent.py  serial loop, app watcher, action executor
-config/profiles.json   the actual mappings
-launchd/               run-at-login plist
+agent/server.py          localhost HTTP API + State snapshot (stdlib only)
+agent/ui/index.html      the mapping editor, one self-contained file
+config/profiles.json     the actual mappings
+launchd/                 run-at-login plist
+tests/                   pytest suite for the parts that run off-Mac
 ```
 
 ## Config schema
@@ -96,12 +108,26 @@ See README for the full table. If you add a type, update the README table, the
 
 ## Testing
 
-Hardware can't be tested in CI. What can and should be:
+```bash
+make dev && make test
+```
+
+Hardware can't be tested in CI, and neither can anything importing `AppKit` or
+`pynput`. `agent/server.py` is deliberately stdlib-only so the HTTP layer is
+testable on any machine — keep it that way; don't import from
+`macropad_agent.py` into it.
+
+Covered today (`tests/test_server.py`): config validation, atomic writes,
+request routing, and the loopback bind.
+
+Still uncovered and worth adding:
 
 - Profile merge/fallback resolution (`Config.resolve`)
 - Combo parsing (`press_combo` splitting, modifier lookup, named keys)
-- Config schema validation — 12 keys per profile, labels ≤ 6 chars, valid hex
-  colors, known action types
+
+Both live in `macropad_agent.py` behind the AppKit import, so testing them
+means either extracting them into a module that doesn't import AppKit, or
+stubbing the macOS modules in `conftest.py`. Extraction is the cleaner path.
 
 Prefer pure functions that can be exercised without a serial port or a display.
 When touching `Config` or the parser, add a test rather than manual-checking on
@@ -127,18 +153,22 @@ the pad.
 
 ## Current state and next step
 
-Working: firmware, agent, app-aware switching, hot reload, launchd.
+Working: firmware, agent, app-aware switching, hot reload, launchd, and the
+localhost mapping editor (grid editing, fall-through display and override,
+learn mode, app picker, atomic validated saves).
 
-Next: the mapping GUI. The config is plain JSON with a stable schema, so the
-editor is decoupled from the runtime. Planned approach is a local web UI served
-by the agent on localhost — Svelte frontend, small HTTP API for read/write of
-`profiles.json`. The agent already hot-reloads on file change, so writes take
-effect without a restart.
+The editor is served from inside the agent process rather than as a second
+daemon — one thing to launch, one source of truth. It has no build step and no
+frontend dependencies on purpose: it's a single HTML file with inline CSS and
+vanilla JS, so it can't rot when a toolchain moves on.
 
-Two features that matter more than they sound:
+Known limitation, documented in the README: **the browser swallows `cmd+w`,
+`cmd+t`, `cmd+q`, and `cmd+n` before the page sees them**, so learn mode can't
+capture those four. They must be typed by hand. This is not fixable from within
+a browser; a native app with a global event tap would solve it.
 
-- **Learn mode** — press a pad key to select the slot, then press the real
-  shortcut on the keyboard to capture it. Typing `cmd+shift+opt+e` into a text
-  field is how these tools become tedious.
-- **Grab frontmost app** — capture bundle ID and icon of whatever was last in
-  front, so nobody has to run `whoami` and copy strings by hand.
+Next, if it's worth the effort — going native (Tauri or SwiftUI). The JSON
+schema and `/api` shape are stable, so a port can run alongside the current
+editor instead of replacing it in one go. Also still open: **learn mode driven
+from the pad itself** (press a pad key to pick the slot), and **app icons in
+the profile list** via `NSWorkspace`.
