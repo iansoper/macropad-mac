@@ -1,5 +1,6 @@
 MACROPAD ?= /Volumes/MACROPAD
 PY := .venv/bin/python3
+CIRCUP := .venv/bin/circup
 UI_PORT ?= 8765
 
 .PHONY: setup dev deploy libs run ui ports whoami test
@@ -15,7 +16,7 @@ dev:                  ## same, plus the test dependencies
 	$(PY) -m pip install -r agent/requirements-dev.txt
 
 libs:                 ## install CircuitPython libs onto the pad
-	circup --path $(MACROPAD) install adafruit_macropad adafruit_display_text adafruit_display_shapes
+	$(CIRCUP) --path $(MACROPAD) install adafruit_macropad adafruit_display_text adafruit_display_shapes
 
 deploy:               ## copy firmware to the pad
 	@test -f $(MACROPAD)/boot_out.txt || { \

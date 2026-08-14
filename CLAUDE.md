@@ -61,6 +61,19 @@ it participates in liveness automatically.
 
 - **`boot.py` needs a hard reset.** Editing it does nothing until the pad is
   unplugged and replugged. Without it `usb_cdc.data` is `None`.
+- **Eject the drive before resetting the pad.** `make deploy` leaves macOS
+  holding the volume with writes still buffered. Resetting the board then —
+  by replug, by the reset button, or via `microcontroller.reset()` — is an
+  unclean unmount, and it corrupts the FAT directory. The damage does not look
+  like damage: `fsck_msdos` reports the volume clean because the FAT chains are
+  intact, while the root directory fills with entries that enumerate but fail
+  to `stat`, and macOS then refuses to mount at all. Run
+  `diskutil eject /Volumes/MACROPAD` first. If it does get corrupted, the repair
+  is `storage.erase_filesystem()` from the REPL, not Disk Utility.
+- **Repeated re-enumeration can wedge `diskarbitrationd`.** After enough
+  reset cycles it starts reporting "Volume(s) mounted successfully" while
+  `diskutil info` still says `Mounted: No`. No amount of `diskutil` retrying
+  fixes it — replug the pad, or restart the daemon.
 - **The pad exposes two serial ports** (console + data). The data channel is
   the higher-numbered `/dev/cu.usbmodem*`. `agent/macropad_agent.py ports`
   shows the selection; `MACROPAD_PORT` overrides it.
