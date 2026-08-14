@@ -1,0 +1,117 @@
+{
+  "_comment": [
+    "Keys are indexed 0-11, row-major, top-left first (3 columns x 4 rows).",
+    "Any null slot in an app profile falls through to the default profile.",
+    "Labels are truncated to 6 characters on the OLED.",
+    "Action types: keys | text | app | shell | url | shortcut | applescript",
+    "Run 'python3 agent/macropad_agent.py whoami' to discover bundle IDs."
+  ],
+
+  "defaultProfile": "global",
+
+  "profiles": {
+    "global": {
+      "name": "Global",
+      "keys": [
+        { "label": "Shot",   "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+shift+4" } },
+        { "label": "Record", "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+shift+5" } },
+        { "label": "Spaces", "color": "#3E8E9B", "action": { "type": "keys", "value": "ctrl+up" } },
+
+        { "label": "Prev",   "color": "#7C9A72", "action": { "type": "keys", "value": "prev" } },
+        { "label": "Play",   "color": "#7C9A72", "action": { "type": "keys", "value": "playpause" } },
+        { "label": "Next",   "color": "#7C9A72", "action": { "type": "keys", "value": "next" } },
+
+        { "label": "Figma",  "color": "#C4703F", "action": { "type": "app", "value": "Figma" } },
+        { "label": "Code",   "color": "#C4703F", "action": { "type": "app", "value": "Visual Studio Code" } },
+        { "label": "Chrome", "color": "#C4703F", "action": { "type": "app", "value": "Google Chrome" } },
+
+        { "label": "Term",   "color": "#4A4A4A", "action": { "type": "app", "value": "Terminal" } },
+        { "label": "Slack",  "color": "#4A4A4A", "action": { "type": "app", "value": "Slack" } },
+        { "label": "Lock",   "color": "#4A4A4A", "action": { "type": "keys", "value": "ctrl+cmd+q" } }
+      ],
+      "encoder": {
+        "cw":    { "type": "keys", "value": "volup" },
+        "ccw":   { "type": "keys", "value": "voldown" },
+        "press": { "type": "keys", "value": "mute" }
+      }
+    },
+
+    "com.figma.Desktop": {
+      "name": "Figma",
+      "keys": [
+        { "label": "Move",  "color": "#3E8E9B", "action": { "type": "keys", "value": "v" } },
+        { "label": "Frame", "color": "#3E8E9B", "action": { "type": "keys", "value": "a" } },
+        { "label": "Text",  "color": "#3E8E9B", "action": { "type": "keys", "value": "t" } },
+
+        { "label": "Comp",  "color": "#C4703F", "action": { "type": "keys", "value": "cmd+opt+k" } },
+        { "label": "Group", "color": "#C4703F", "action": { "type": "keys", "value": "cmd+g" } },
+        { "label": "Auto",  "color": "#C4703F", "action": { "type": "keys", "value": "shift+a" } },
+
+        { "label": "Fit",   "color": "#7C9A72", "action": { "type": "keys", "value": "shift+1" } },
+        { "label": "Zoom",  "color": "#7C9A72", "action": { "type": "keys", "value": "shift+2" } },
+        { "label": "UI",    "color": "#7C9A72", "action": { "type": "keys", "value": "cmd+\\" } },
+
+        { "label": "Mask",  "color": "#4A4A4A", "action": { "type": "keys", "value": "ctrl+cmd+m" } },
+        { "label": "Export","color": "#4A4A4A", "action": { "type": "keys", "value": "cmd+shift+e" } },
+        { "label": "Note",  "color": "#4A4A4A", "action": { "type": "keys", "value": "c" } }
+      ],
+      "encoder": {
+        "cw":    { "type": "keys", "value": "cmd+=" },
+        "ccw":   { "type": "keys", "value": "cmd+-" },
+        "press": { "type": "keys", "value": "shift+1" }
+      }
+    },
+
+    "com.microsoft.VSCode": {
+      "name": "VS Code",
+      "keys": [
+        { "label": "Palet", "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+shift+p" } },
+        { "label": "Files", "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+p" } },
+        { "label": "Find",  "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+shift+f" } },
+
+        { "label": "Term",  "color": "#C4703F", "action": { "type": "keys", "value": "ctrl+`" } },
+        { "label": "Side",  "color": "#C4703F", "action": { "type": "keys", "value": "cmd+b" } },
+        { "label": "Split", "color": "#C4703F", "action": { "type": "keys", "value": "cmd+\\" } },
+
+        { "label": "Fmt",   "color": "#7C9A72", "action": { "type": "keys", "value": "shift+opt+f" } },
+        { "label": "Cmnt",  "color": "#7C9A72", "action": { "type": "keys", "value": "cmd+/" } },
+        { "label": "Probs", "color": "#7C9A72", "action": { "type": "keys", "value": "cmd+shift+m" } },
+
+        { "label": "Git",   "color": "#4A4A4A", "action": { "type": "keys", "value": "ctrl+shift+g" } },
+        { "label": "Explr", "color": "#4A4A4A", "action": { "type": "keys", "value": "cmd+shift+e" } },
+        { "label": "Debug", "color": "#4A4A4A", "action": { "type": "keys", "value": "f5" } }
+      ],
+      "encoder": {
+        "cw":    { "type": "keys", "value": "cmd+shift+]" },
+        "ccw":   { "type": "keys", "value": "cmd+shift+[" },
+        "press": { "type": "keys", "value": "cmd+s" }
+      }
+    },
+
+    "com.google.Chrome": {
+      "name": "Chrome",
+      "keys": [
+        { "label": "NewTab","color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+t" } },
+        { "label": "Close", "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+w" } },
+        { "label": "Undo",  "color": "#3E8E9B", "action": { "type": "keys", "value": "cmd+shift+t" } },
+
+        { "label": "Back",  "color": "#C4703F", "action": { "type": "keys", "value": "cmd+[" } },
+        { "label": "Fwd",   "color": "#C4703F", "action": { "type": "keys", "value": "cmd+]" } },
+        { "label": "Reload","color": "#C4703F", "action": { "type": "keys", "value": "cmd+shift+r" } },
+
+        { "label": "DevTls","color": "#7C9A72", "action": { "type": "keys", "value": "cmd+opt+i" } },
+        { "label": "Find",  "color": "#7C9A72", "action": { "type": "keys", "value": "cmd+f" } },
+        { "label": "Incog", "color": "#7C9A72", "action": { "type": "keys", "value": "cmd+shift+n" } },
+
+        { "label": "Zoom+", "color": "#4A4A4A", "action": { "type": "keys", "value": "cmd+=" } },
+        { "label": "Zoom-", "color": "#4A4A4A", "action": { "type": "keys", "value": "cmd+-" } },
+        { "label": "URL",   "color": "#4A4A4A", "action": { "type": "keys", "value": "cmd+l" } }
+      ],
+      "encoder": {
+        "cw":    { "type": "keys", "value": "ctrl+tab" },
+        "ccw":   { "type": "keys", "value": "ctrl+shift+tab" },
+        "press": { "type": "keys", "value": "cmd+l" }
+      }
+    }
+  }
+}

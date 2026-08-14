@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.iansoper.macropad</string>
+
+    <!-- Absolute paths only. Point the first at your venv python. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/CHANGEME/macropad-mac/.venv/bin/python3</string>
+        <string>/Users/CHANGEME/macropad-mac/agent/macropad_agent.py</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/macropad-agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/macropad-agent.err</string>
+</dict>
+</plist>
