@@ -19,7 +19,7 @@ renders whatever layer the Mac pushes back. All mapping lives in
 This is a deliberate trade, not an oversight. Do not "optimize" by moving
 keymaps into firmware. The reasons:
 
-- Remapping is a JSON edit, not a reflash + file copy to CIRCUITPY.
+- Remapping is a JSON edit, not a reflash + file copy to MACROPAD.
 - Actions aren't limited to keystrokes — shell, AppleScript, Shortcuts, URL
   schemes all work because the host executes them.
 - The planned GUI is just a `profiles.json` editor. Firmware never changes again.
@@ -142,7 +142,7 @@ the pad.
 
 ## Rules for AI agents
 
-- Don't reflash or copy to `/Volumes/CIRCUITPY` without being asked. Use
+- Don't reflash or copy to `/Volumes/MACROPAD` without being asked. Use
   `make deploy` and tell the user to replug if `boot.py` changed.
 - Don't add dependencies to `agent/requirements.txt` without flagging it. The
   current three are load-bearing and deliberately minimal.
