@@ -1,4 +1,4 @@
-CIRCUITPY ?= /Volumes/CIRCUITPY
+MACROPAD ?= /Volumes/MACROPAD
 PY := .venv/bin/python3
 UI_PORT ?= 8765
 
@@ -15,11 +15,24 @@ dev:                  ## same, plus the test dependencies
 	$(PY) -m pip install -r agent/requirements-dev.txt
 
 libs:                 ## install CircuitPython libs onto the pad
-	circup install adafruit_macropad adafruit_display_text adafruit_display_shapes
+	circup --path $(MACROPAD) install adafruit_macropad adafruit_display_text adafruit_display_shapes
 
 deploy:               ## copy firmware to the pad
-	@test -d $(CIRCUITPY) || (echo "CIRCUITPY not mounted at $(CIRCUITPY)"; exit 1)
-	cp firmware/boot.py firmware/code.py $(CIRCUITPY)/
+	@test -f $(MACROPAD)/boot_out.txt || { \
+		echo "No CircuitPython drive mounted at $(MACROPAD)."; \
+		test -d $(MACROPAD) && { \
+			echo "  $(MACROPAD) exists but nothing is mounted on it — a stale mount"; \
+			echo "  point left by an unclean unplug. macOS will not remount over it."; \
+			echo "  Clear it, then replug the pad:  sudo rmdir $(MACROPAD)"; \
+		}; \
+		exit 1; \
+	}
+	@test -w $(MACROPAD) || { \
+		echo "$(MACROPAD) is mounted read-only — the firmware holds the write lock."; \
+		echo "  Reset the pad, or drop the storage.remount() call in boot.py."; \
+		exit 1; \
+	}
+	cp firmware/boot.py firmware/code.py $(MACROPAD)/
 	@echo "Copied. If boot.py changed, UNPLUG AND REPLUG the pad."
 
 run:                  ## run the agent (serves the editor too)
