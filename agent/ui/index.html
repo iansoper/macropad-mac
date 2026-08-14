@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MacroPad</title>
+<!-- Inline so the browser never requests /favicon.ico, which the agent
+     has no route for and would log as a 404 on every load. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cg fill='%233E8E9B'%3E%3Crect x='1' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='1' width='6' height='6' rx='1.5'/%3E%3Crect x='17' y='1' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Cg fill='%237C9A72'%3E%3Crect x='1' y='9' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='9' width='6' height='6' rx='1.5'/%3E%3Crect x='17' y='9' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Cg fill='%23C4703F'%3E%3Crect x='1' y='17' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='17' width='6' height='6' rx='1.5'/%3E%3Crect x='17' y='17' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Cg fill='%234A4A4A'%3E%3Crect x='1' y='25' width='6' height='6' rx='1.5'/%3E%3Crect x='9' y='25' width='6' height='6' rx='1.5'/%3E%3Crect x='17' y='25' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  /* Palette lifted from the shipped profiles so the editor and the pad's
+     LEDs read as the same object. */
+  :root {
+    --teal:   #3E8E9B;
+    --green:  #7C9A72;
+    --orange: #C4703F;
+    --slate:  #4A4A4A;
+
+    --bg:        #f6f6f4;
+    --panel:     #ffffff;
+    --panel-2:   #f0efec;
+    --line:      #dedcd6;
+    --ink:       #22211e;
+    --ink-dim:   #6d6b64;
+    --ink-faint: #a4a29a;
+    --accent:    var(--teal);
+    --danger:    #b4443a;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #17181a;
+      --panel:     #1e2023;
+      --panel-2:   #26282c;
+      --line:      #33363b;
+      --ink:       #e8e6e1;
+      --ink-dim:   #9b9891;
+      --ink-faint: #6a6862;
+      --danger:    #d4695e;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  /* ---------------------------------------------------------- header -- */
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .wordmark { font-weight: 620; letter-spacing: -0.01em; }
+  .status {
+    display: flex; align-items: center; gap: 7px;
+    color: var(--ink-dim); font-size: 13px;
+    padding: 4px 10px; border-radius: 999px; background: var(--panel-2);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); flex: none; }
+  .dot.live { background: var(--green); }
+  .spacer { flex: 1; }
+
+  .btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel-2);
+    transition: border-color .12s, background .12s;
+  }
+  .btn:hover { border-color: var(--ink-faint); }
+  .btn.primary {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 560;
+  }
+  .btn.primary:disabled { opacity: .4; cursor: default; }
+  .btn.primary:not(:disabled):hover { filter: brightness(1.08); }
+  .btn.ghost { background: none; border-color: transparent; color: var(--ink-dim); }
+  .btn.ghost:hover { color: var(--ink); background: var(--panel-2); }
+
+  /* ------------------------------------------------------------ body -- */
+  .layout {
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr) 312px;
+    gap: 20px; padding: 20px;
+    align-items: start;
+    max-width: 1180px; margin: 0 auto;
+  }
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .panel h2 {
+    margin: 0 0 10px; font-size: 11px; font-weight: 620;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  /* --------------------------------------------------------- profiles -- */
+  .profile {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; text-align: left;
+    padding: 8px 10px; margin-bottom: 2px;
+    border: 1px solid transparent; border-radius: 8px;
+    background: none; color: var(--ink-dim);
+  }
+  .profile:hover { background: var(--panel-2); color: var(--ink); }
+  .profile.active {
+    background: var(--panel-2); color: var(--ink);
+    border-color: var(--line); font-weight: 560;
+  }
+  .profile .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile .live-tag {
+    font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--green); font-weight: 620;
+  }
+  .bundle {
+    font-family: var(--mono); font-size: 10.5px;
+    color: var(--ink-faint); padding: 0 10px 8px; margin-top: -2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------ grid -- */
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-bottom: 18px;
+  }
+  .key {
+    position: relative; aspect-ratio: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 8px;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--panel-2);
+    transition: border-color .12s, transform .06s;
+  }
+  .key:hover { border-color: var(--ink-faint); }
+  .key:active { transform: scale(.97); }
+  .key.selected { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .key.inherited { border-style: dashed; }
+  .key.inherited .key-label, .key.inherited .swatch { opacity: .45; }
+  .key.empty .key-label { color: var(--ink-faint); }
+  .swatch { width: 26px; height: 26px; border-radius: 7px; background: var(--slate); flex: none; }
+  .key-label { font-weight: 560; font-size: 13px; }
+  .key-sub {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-faint);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .key-index {
+    position: absolute; top: 5px; left: 7px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint);
+  }
+  .inherit-mark {
+    position: absolute; top: 5px; right: 7px;
+    font-size: 10px; color: var(--ink-faint);
+  }
+
+  .encoder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .enc {
+    padding: 10px; border-radius: var(--radius);
+    border: 1px solid var(--line); background: var(--panel-2);
+    text-align: left;
+  }
+  .enc.selected { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .enc .cap {
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-faint); display: block; margin-bottom: 3px;
+  }
+  .enc .val { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim);
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ------------------------------------------------------- inspector -- */
+  .field { margin-bottom: 13px; }
+  .field label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 5px; font-weight: 560;
+  }
+  .field .count { text-transform: none; letter-spacing: 0; font-family: var(--mono); }
+  .field .count.over { color: var(--danger); }
+  input[type=text], select, textarea {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg);
+  }
+  input[type=text]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  textarea { resize: vertical; min-height: 62px; font-family: var(--mono); font-size: 12.5px; }
+  .value-row { display: flex; gap: 6px; }
+  .value-row input { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .swatch-btn {
+    width: 26px; height: 26px; border-radius: 7px;
+    border: 2px solid transparent; padding: 0;
+  }
+  .swatch-btn.on { border-color: var(--ink); }
+  input[type=color] {
+    width: 30px; height: 26px; padding: 0; border: 1px solid var(--line);
+    border-radius: 7px; background: none;
+  }
+
+  .learn {
+    padding: 7px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel-2);
+    white-space: nowrap;
+  }
+  .learn.armed {
+    background: var(--orange); border-color: var(--orange);
+    color: #fff; font-weight: 560;
+  }
+  .hint { font-size: 12px; color: var(--ink-faint); line-height: 1.45; margin-top: 7px; }
+  .hint code { font-family: var(--mono); font-size: 11px; }
+
+  .empty-state { color: var(--ink-faint); font-size: 13px; padding: 8px 0 2px; }
+  .row { display: flex; gap: 6px; margin-top: 14px; }
+  .row .btn { flex: 1; text-align: center; }
+
+  /* ----------------------------------------------------------- modal -- */
+  dialog {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--panel); color: var(--ink);
+    padding: 0; width: min(440px, 92vw);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .modal-body { padding: 16px; }
+  .modal-body h3 { margin: 0 0 4px; font-size: 15px; }
+  .app-list { max-height: 300px; overflow-y: auto; margin: 12px -6px 0; }
+  .app-row {
+    display: block; width: 100%; text-align: left;
+    padding: 7px 10px; border: none; border-radius: 7px; background: none;
+  }
+  .app-row:hover { background: var(--panel-2); }
+  .app-row .b { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(12px);
+    background: var(--ink); color: var(--bg);
+    padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="wordmark">MacroPad</span>
+  <span class="status"><span class="dot" id="dot"></span><span id="status-text">connecting…</span></span>
+  <span class="spacer"></span>
+  <button class="btn ghost" id="revert" hidden>Discard</button>
+  <button class="btn primary" id="save" disabled>Saved</button>
+</header>
+
+<div class="layout">
+
+  <div class="panel" id="profiles-panel">
+    <h2>Profiles</h2>
+    <div id="profiles"></div>
+    <div class="row"><button class="btn" id="add-app">+ Add app</button></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="grid-title">Keys</h2>
+    <div class="grid" id="grid"></div>
+    <h2>Encoder</h2>
+    <div class="encoder" id="encoder"></div>
+  </div>
+
+  <div class="panel" id="inspector">
+    <h2>Inspector</h2>
+    <div class="empty-state">Select a key to edit it.</div>
+  </div>
+
+</div>
+
+<dialog id="app-modal">
+  <div class="modal-body">
+    <h3>Add an app profile</h3>
+    <div class="hint">Pick a running app, or type a bundle ID by hand.</div>
+    <div class="field" style="margin-top:12px">
+      <div class="value-row">
+        <input type="text" id="manual-bundle" placeholder="com.example.App">
+        <button class="btn" id="manual-add">Add</button>
+      </div>
+    </div>
+    <div class="app-list" id="app-list"></div>
+    <div class="row"><button class="btn" id="modal-close">Cancel</button></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const SWATCHES = ["#3E8E9B", "#7C9A72", "#C4703F", "#4A4A4A", "#8A6BA1", "#B4443A"];
+const LABEL_MAX = 6;   // the 128x64 OLED truncates past this
+const ENC_SLOTS = [["ccw", "Turn left"], ["press", "Press"], ["cw", "Turn right"]];
+
+let config = null;      // the whole profiles.json
+let meta = null;        // action types + named keys, from the agent
+let selectedProfile = null;
+let selectedSlot = null; // 0-11, or "cw" | "ccw" | "press"
+let dirty = false;
+let learning = false;
+let liveBundle = null;   // frontmost app, for the LIVE tag
+
+const $ = (id) => document.getElementById(id);
+
+// ------------------------------------------------------------- helpers --
+function defaultProfileKey() {
+  return (config && config.defaultProfile) || "global";
+}
+function isDefaultProfile(key) {
+  return key === defaultProfileKey();
+}
+function profile(key) {
+  return config.profiles[key] || {};
+}
+function keysOf(key) {
+  const list = (profile(key).keys || []).slice();
+  while (list.length < 12) list.push(null);
+  return list;
+}
+/** What the agent would actually use for this slot, after fall-through. */
+function effectiveKey(profileKey, i) {
+  const own = keysOf(profileKey)[i];
+  if (own) return { entry: own, inherited: false };
+  if (isDefaultProfile(profileKey)) return { entry: null, inherited: false };
+  const base = keysOf(defaultProfileKey())[i];
+  return { entry: base || null, inherited: !!base };
+}
+function effectiveEncoder(profileKey, slot) {
+  const own = (profile(profileKey).encoder || {})[slot];
+  if (own) return { entry: own, inherited: false };
+  if (isDefaultProfile(profileKey)) return { entry: null, inherited: false };
+  const base = (profile(defaultProfileKey()).encoder || {})[slot];
+  return { entry: base || null, inherited: !!base };
+}
+function describe(entry) {
+  if (!entry || !entry.action) return "—";
+  const a = entry.action;
+  return a.type === "keys" ? (a.value || "—") : `${a.type}: ${a.value || ""}`;
+}
+function markDirty() {
+  dirty = true;
+  $("save").disabled = false;
+  $("save").textContent = "Save";
+  $("revert").hidden = false;
+}
+function toast(msg, isError) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (isError ? " err" : "");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = "toast"; }, isError ? 4200 : 1800);
+}
+
+// -------------------------------------------------------------- render --
+function renderProfiles() {
+  const host = $("profiles");
+  host.innerHTML = "";
+  const keys = Object.keys(config.profiles);
+  // Default profile first, the rest alphabetically by display name.
+  keys.sort((a, b) => {
+    if (isDefaultProfile(a)) return -1;
+    if (isDefaultProfile(b)) return 1;
+    return (profile(a).name || a).localeCompare(profile(b).name || b);
+  });
+
+  for (const key of keys) {
+    const btn = document.createElement("button");
+    btn.className = "profile" + (key === selectedProfile ? " active" : "");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = profile(key).name || key;
+    btn.appendChild(name);
+    if (key === liveBundle || (isDefaultProfile(key) && !config.profiles[liveBundle])) {
+      const tag = document.createElement("span");
+      tag.className = "live-tag";
+      tag.textContent = "live";
+      btn.appendChild(tag);
+    }
+    btn.onclick = () => { selectedProfile = key; selectedSlot = null; renderAll(); };
+    host.appendChild(btn);
+
+    if (!isDefaultProfile(key)) {
+      const b = document.createElement("div");
+      b.className = "bundle";
+      b.textContent = key;
+      host.appendChild(b);
+    }
+  }
+}
+
+function renderGrid() {
+  $("grid-title").textContent = "Keys — " + (profile(selectedProfile).name || selectedProfile);
+  const host = $("grid");
+  host.innerHTML = "";
+
+  for (let i = 0; i < 12; i++) {
+    const { entry, inherited } = effectiveKey(selectedProfile, i);
+    const btn = document.createElement("button");
+    btn.className = "key"
+      + (selectedSlot === i ? " selected" : "")
+      + (inherited ? " inherited" : "")
+      + (entry ? "" : " empty");
+
+    const idx = document.createElement("span");
+    idx.className = "key-index";
+    idx.textContent = i;
+    btn.appendChild(idx);
+
+    if (inherited) {
+      const mark = document.createElement("span");
+      mark.className = "inherit-mark";
+      mark.textContent = "↓";
+      mark.title = "Inherited from " + (profile(defaultProfileKey()).name || "default");
+      btn.appendChild(mark);
+    }
+
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = (entry && entry.color) || "transparent";
+    if (!entry) sw.style.border = "1px dashed var(--line)";
+    btn.appendChild(sw);
+
+    const lab = document.createElement("span");
+    lab.className = "key-label";
+    lab.textContent = entry ? (entry.label || "—") : "empty";
+    btn.appendChild(lab);
+
+    const sub = document.createElement("span");
+    sub.className = "key-sub";
+    sub.textContent = describe(entry);
+    btn.appendChild(sub);
+
+    btn.onclick = () => { selectedSlot = i; learning = false; renderAll(); };
+    host.appendChild(btn);
+  }
+}
+
+function renderEncoder() {
+  const host = $("encoder");
+  host.innerHTML = "";
+  for (const [slot, caption] of ENC_SLOTS) {
+    const { entry, inherited } = effectiveEncoder(selectedProfile, slot);
+    const btn = document.createElement("button");
+    btn.className = "enc" + (selectedSlot === slot ? " selected" : "");
+    const cap = document.createElement("span");
+    cap.className = "cap";
+    cap.textContent = caption + (inherited ? " ↓" : "");
+    btn.appendChild(cap);
+    const val = document.createElement("span");
+    val.className = "val";
+    // Encoder slots are bare action objects, not {label, action} entries.
+    val.textContent = entry ? describe({ action: entry }) : "—";
+    btn.appendChild(val);
+    btn.onclick = () => { selectedSlot = slot; learning = false; renderAll(); };
+    host.appendChild(btn);
+  }
+}
+
+function renderInspector() {
+  const host = $("inspector");
+  host.innerHTML = "<h2>Inspector</h2>";
+
+  if (selectedSlot === null) {
+    host.insertAdjacentHTML("beforeend",
+      '<div class="empty-state">Select a key to edit it.</div>');
+    return;
+  }
+
+  const isEncoder = typeof selectedSlot === "string";
+  const res = isEncoder
+    ? effectiveEncoder(selectedProfile, selectedSlot)
+    : effectiveKey(selectedProfile, selectedSlot);
+
+  if (res.inherited) {
+    const from = profile(defaultProfileKey()).name || "default";
+    host.insertAdjacentHTML("beforeend",
+      `<div class="hint">This slot falls through to <strong>${escapeHtml(from)}</strong>.
+       Override it to give this app its own binding.</div>`);
+    const row = document.createElement("div");
+    row.className = "row";
+    const b = document.createElement("button");
+    b.className = "btn primary";
+    b.textContent = "Override here";
+    b.onclick = () => {
+      writeSlot(JSON.parse(JSON.stringify(
+        isEncoder ? res.entry : res.entry)));
+      markDirty(); renderAll();
+    };
+    row.appendChild(b);
+    host.appendChild(row);
+    return;
+  }
+
+  if (!res.entry) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const b = document.createElement("button");
+    b.className = "btn primary";
+    b.textContent = "Assign this key";
+    b.onclick = () => {
+      writeSlot(isEncoder
+        ? { type: "keys", value: "" }
+        : { label: "", color: SWATCHES[0], action: { type: "keys", value: "" } });
+      markDirty(); renderAll();
+    };
+    row.appendChild(b);
+    host.insertAdjacentHTML("beforeend",
+      '<div class="empty-state">This slot is unassigned.</div>');
+    host.appendChild(row);
+    return;
+  }
+
+  const entry = res.entry;
+  const action = isEncoder ? entry : (entry.action || (entry.action = {}));
+
+  // -- label + color (keys only; the encoder has no OLED slot or LED) --
+  if (!isEncoder) {
+    const over = (entry.label || "").length > LABEL_MAX;
+    host.insertAdjacentHTML("beforeend", `
+      <div class="field">
+        <label>Label <span class="count${over ? " over" : ""}">${(entry.label || "").length}/${LABEL_MAX}</span></label>
+        <input type="text" id="f-label" value="${escapeHtml(entry.label || "")}">
+        ${over ? '<div class="hint">The OLED truncates past 6 characters.</div>' : ""}
+      </div>
+      <div class="field">
+        <label>Key colour</label>
+        <div class="swatches" id="f-swatches"></div>
+      </div>
+    `);
+
+    $("f-label").oninput = (e) => {
+      entry.label = e.target.value;
+      markDirty();
+      renderGrid();
+      const c = host.querySelector(".count");
+      if (c) {
+        c.textContent = `${e.target.value.length}/${LABEL_MAX}`;
+        c.classList.toggle("over", e.target.value.length > LABEL_MAX);
+      }
+    };
+
+    const sw = $("f-swatches");
+    for (const colour of SWATCHES) {
+      const b = document.createElement("button");
+      b.className = "swatch-btn" + (sameColour(entry.color, colour) ? " on" : "");
+      b.style.background = colour;
+      b.onclick = () => { entry.color = colour; markDirty(); renderAll(); };
+      sw.appendChild(b);
+    }
+    const custom = document.createElement("input");
+    custom.type = "color";
+    custom.value = normaliseColour(entry.color) || "#000000";
+    custom.oninput = (e) => { entry.color = e.target.value.toUpperCase(); markDirty(); renderGrid(); };
+    sw.appendChild(custom);
+  }
+
+  // -- action ------------------------------------------------------
+  const opts = meta.actionTypes
+    .map(t => `<option value="${t.type}"${action.type === t.type ? " selected" : ""}>${t.label}</option>`)
+    .join("");
+  const spec = meta.actionTypes.find(t => t.type === action.type) || meta.actionTypes[0];
+
+  host.insertAdjacentHTML("beforeend", `
+    <div class="field">
+      <label>Action</label>
+      <select id="f-type">${opts}</select>
+    </div>
+    <div class="field" id="f-value-field"></div>
+  `);
+
+  $("f-type").onchange = (e) => {
+    action.type = e.target.value;
+    action.value = "";
+    learning = false;
+    markDirty(); renderAll();
+  };
+
+  const vf = $("f-value-field");
+  if (action.type === "applescript") {
+    vf.innerHTML = `<label>Script</label><textarea id="f-value" placeholder="${escapeHtml(spec.placeholder)}">${escapeHtml(action.value || "")}</textarea>`;
+  } else if (action.type === "keys") {
+    vf.innerHTML = `
+      <label>Shortcut</label>
+      <div class="value-row">
+        <input type="text" id="f-value" value="${escapeHtml(action.value || "")}" placeholder="${escapeHtml(spec.placeholder)}">
+        <button class="learn${learning ? " armed" : ""}" id="f-learn">${learning ? "Press it…" : "Learn"}</button>
+      </div>
+      <div class="hint">
+        Click <strong>Learn</strong>, then press the real shortcut.
+        A few combos the browser keeps for itself — <code>cmd+w</code>,
+        <code>cmd+t</code>, <code>cmd+q</code>, <code>cmd+n</code> — never
+        reach this page; type those in by hand.
+      </div>`;
+    $("f-learn").onclick = () => { learning = !learning; renderInspector(); };
+  } else {
+    vf.innerHTML = `<label>Value</label><input type="text" id="f-value" value="${escapeHtml(action.value || "")}" placeholder="${escapeHtml(spec.placeholder)}">`;
+  }
+
+  $("f-value").oninput = (e) => {
+    action.value = e.target.value;
+    markDirty();
+    renderGrid(); renderEncoder();
+  };
+
+  // -- clear -------------------------------------------------------
+  const row = document.createElement("div");
+  row.className = "row";
+  const clear = document.createElement("button");
+  clear.className = "btn";
+  clear.textContent = isDefaultProfile(selectedProfile) ? "Clear key" : "Reset to default";
+  clear.onclick = () => { writeSlot(null); markDirty(); renderAll(); };
+  row.appendChild(clear);
+  host.appendChild(row);
+}
+
+/** Put a value into the selected slot of the selected profile. */
+function writeSlot(value) {
+  const p = config.profiles[selectedProfile];
+  if (typeof selectedSlot === "string") {
+    p.encoder = p.encoder || {};
+    if (value === null) delete p.encoder[selectedSlot];
+    else p.encoder[selectedSlot] = value;
+  } else {
+    const list = keysOf(selectedProfile);
+    list[selectedSlot] = value;
+    // Trailing nulls are meaningful to nobody; the agent pads to 12 anyway.
+    while (list.length && list[list.length - 1] === null) list.pop();
+    p.keys = list;
+  }
+}
+
+function renderAll() {
+  renderProfiles();
+  renderGrid();
+  renderEncoder();
+  renderInspector();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function normaliseColour(c) {
+  if (!c) return null;
+  const s = String(c).trim();
+  return /^#[0-9a-f]{6}$/i.test(s) ? s.toUpperCase() : null;
+}
+function sameColour(a, b) {
+  return normaliseColour(a) === normaliseColour(b);
+}
+
+// --------------------------------------------------------- learn mode --
+/** Map a browser KeyboardEvent onto the agent's combo vocabulary. */
+function comboFrom(e) {
+  const parts = [];
+  if (e.metaKey) parts.push("cmd");
+  if (e.ctrlKey) parts.push("ctrl");
+  if (e.altKey) parts.push("opt");
+  if (e.shiftKey) parts.push("shift");
+
+  const NAMED = {
+    Enter: "enter", Tab: "tab", Escape: "esc", " ": "space",
+    Backspace: "delete", Delete: "fwddelete",
+    ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+    Home: "home", End: "end", PageUp: "pageup", PageDown: "pagedown",
+  };
+
+  let key = e.key;
+  if (["Meta", "Control", "Alt", "Shift"].includes(key)) return null; // modifier alone
+  if (NAMED[key]) key = NAMED[key];
+  else if (/^F\d{1,2}$/.test(key)) key = key.toLowerCase();
+  else if (key.length === 1) {
+    // Shifted punctuation reports the shifted glyph; the agent wants the
+    // physical key, so recover it from e.code where we can.
+    const m = /^Digit(\d)$/.exec(e.code) || /^Key([A-Z])$/.exec(e.code);
+    key = m ? m[1].toLowerCase() : key.toLowerCase();
+  } else return null;
+
+  parts.push(key);
+  return parts.join("+");
+}
+
+document.addEventListener("keydown", (e) => {
+  if (learning) {
+    const combo = comboFrom(e);
+    e.preventDefault();
+    e.stopPropagation();
+    if (!combo) return;   // modifier on its own — keep waiting
+    const res = typeof selectedSlot === "string"
+      ? effectiveEncoder(selectedProfile, selectedSlot)
+      : effectiveKey(selectedProfile, selectedSlot);
+    const action = typeof selectedSlot === "string" ? res.entry : res.entry.action;
+    action.value = combo;
+    learning = false;
+    markDirty(); renderAll();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); save(); }
+}, true);
+
+// ----------------------------------------------------------------- io --
+async function save() {
+  if (!dirty) return;
+  $("save").disabled = true;
+  $("save").textContent = "Saving…";
+  try {
+    const res = await fetch("/api/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config, null, 2),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || "save failed");
+    }
+    dirty = false;
+    $("save").textContent = "Saved";
+    $("revert").hidden = true;
+    toast("Saved — the pad updates in about a second");
+  } catch (err) {
+    $("save").disabled = false;
+    $("save").textContent = "Save";
+    toast(err.message, true);
+  }
+}
+
+async function load() {
+  const [cfg, m] = await Promise.all([
+    fetch("/api/config").then(r => r.json()),
+    fetch("/api/meta").then(r => r.json()),
+  ]);
+  config = cfg;
+  meta = m;
+  if (!selectedProfile || !config.profiles[selectedProfile]) {
+    selectedProfile = defaultProfileKey();
+  }
+  dirty = false;
+  $("save").disabled = true;
+  $("save").textContent = "Saved";
+  $("revert").hidden = true;
+  renderAll();
+}
+
+async function pollState() {
+  try {
+    const s = await fetch("/api/state").then(r => r.json());
+    const changed = s.bundleId !== liveBundle;
+    liveBundle = s.bundleId;
+    $("dot").className = "dot" + (s.connected ? " live" : "");
+    $("status-text").textContent = s.connected
+      ? `${s.appName || "—"} → ${s.profileName || "—"}`
+      : "pad not connected";
+    if (changed) renderProfiles();
+  } catch {
+    $("dot").className = "dot";
+    $("status-text").textContent = "agent not responding";
+  }
+}
+
+// -------------------------------------------------------------- modal --
+function openAppModal() {
+  const list = $("app-list");
+  list.innerHTML = "";
+  fetch("/api/state").then(r => r.json()).then(s => {
+    const apps = (s.runningApps || []).filter(a => !config.profiles[a.bundleId]);
+    if (!apps.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:8px 10px">No other running apps found.</div>';
+      return;
+    }
+    for (const app of apps) {
+      const b = document.createElement("button");
+      b.className = "app-row";
+      b.innerHTML = `<div>${escapeHtml(app.name)}</div><div class="b">${escapeHtml(app.bundleId)}</div>`;
+      b.onclick = () => addProfile(app.bundleId, app.name);
+      list.appendChild(b);
+    }
+  });
+  $("app-modal").showModal();
+}
+
+function addProfile(bundleId, name) {
+  bundleId = (bundleId || "").trim();
+  if (!bundleId) return;
+  if (!config.profiles[bundleId]) {
+    config.profiles[bundleId] = {
+      name: name || bundleId.split(".").pop(),
+      keys: [],
+      encoder: {},
+    };
+  }
+  selectedProfile = bundleId;
+  selectedSlot = null;
+  markDirty();
+  $("app-modal").close();
+  $("manual-bundle").value = "";
+  renderAll();
+}
+
+// --------------------------------------------------------------- boot --
+$("save").onclick = save;
+$("revert").onclick = () => { if (confirm("Discard unsaved changes?")) load(); };
+$("add-app").onclick = openAppModal;
+$("modal-close").onclick = () => $("app-modal").close();
+$("manual-add").onclick = () => addProfile($("manual-bundle").value);
+$("manual-bundle").onkeydown = (e) => {
+  if (e.key === "Enter") { e.preventDefault(); addProfile(e.target.value); }
+};
+window.onbeforeunload = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } };
+
+load().then(() => { pollState(); setInterval(pollState, 1500); });
+</script>
+</body>
+</html>

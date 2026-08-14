@@ -9,7 +9,12 @@ MacroPad (CircuitPython)                 Mac agent (Python)
   OLED + NeoPixels    ◄─── USB serial ─────  pushes layer on app switch
                                              watches NSWorkspace frontmost app
                                              reads config/profiles.json
+                                             serves the editor on :8765
 ```
+
+Mapping keys is done in a browser-based editor the agent serves itself — see
+[Editor](#editor). Everything it does is a write to `profiles.json`, so hand-editing
+the file remains a first-class option.
 
 ## Why the pad is "dumb"
 
@@ -60,16 +65,16 @@ keystrokes is privileged on macOS; there's no way around this.
 
 ### 3. Add your own apps
 
-```bash
-python3 agent/macropad_agent.py whoami
-```
+Open <http://127.0.0.1:8765> (`make ui`) and hit **+ Add app**. It lists your
+running apps with their bundle IDs, so you never have to look one up.
 
-Click around your apps and it prints bundle IDs. Add a profile keyed by the
-bundle ID to `profiles.json`. Any `null` slot falls through to the `global`
-profile, so a Figma layer that only overrides 6 keys keeps your global media
-controls on the rest.
+If you'd rather work in the JSON, `python3 agent/macropad_agent.py whoami`
+prints bundle IDs as you click between apps. Add a profile keyed by the bundle
+ID. Any `null` slot falls through to the `global` profile, so a Figma layer
+that only overrides 6 keys keeps your global media controls on the rest.
 
-The agent hot-reloads the config on save — no restart while you're tuning.
+The agent hot-reloads the config on save — no restart while you're tuning,
+whichever way you edit it.
 
 ### 4. Run at login (optional)
 
@@ -80,6 +85,47 @@ launchctl load ~/Library/LaunchAgents/com.iansoper.macropad.plist
 
 Edit the paths in the plist first. Grant Accessibility to the Python binary
 itself when running under launchd, not to Terminal.
+
+## Editor
+
+The agent serves a mapping editor at <http://127.0.0.1:8765>. It runs on a
+thread inside the agent process — there's no second thing to launch, and no
+build step, npm, or bundle involved. It's one HTML file.
+
+```bash
+make run    # agent + editor
+make ui     # open it
+```
+
+The grid mirrors the physical pad, so slot 0 on screen is the top-left key.
+Pick a profile on the left, click a key, edit it on the right, hit **Save**
+(or ⌘S). The agent notices the file change within about a second and re-pushes
+the layer, so the OLED and LEDs update while you're still looking at them.
+
+Keys inherited from the default profile are drawn dashed and dimmed with a `↓`,
+which makes fall-through visible instead of something you infer from `null`s.
+**Override here** gives that slot its own binding, seeded from the inherited
+one; **Reset to default** puts it back.
+
+**Learn mode** is the reason to use the editor over the JSON: click **Learn**
+and press the actual shortcut instead of typing `cmd+shift+opt+e` into a field.
+
+One real limitation — the browser claims a handful of combos before any page
+sees them, so **`cmd+w`, `cmd+t`, `cmd+q`, and `cmd+n` cannot be captured by
+Learn mode**. Type those into the field by hand; they work fine on the pad,
+they just can't be recorded through a browser. A native app wouldn't have this
+problem, which is the strongest argument for eventually building one.
+
+### Notes
+
+- The server binds to `127.0.0.1` only, and deliberately sends no CORS headers.
+  Profiles can carry `shell` and `applescript` actions, so anything that can
+  write to this API can make the agent run arbitrary commands. Don't expose it.
+- Saves are validated and written atomically (temp file + `os.replace`), so a
+  rejected or half-finished save can't leave the agent with a broken config.
+- `MACROPAD_UI_PORT` moves it; `MACROPAD_NO_UI=1` runs the agent headless.
+- If the port is taken — usually a second copy of the agent — it logs and keeps
+  going. The pad still works without the editor.
 
 ## Config reference
 
@@ -111,32 +157,33 @@ prev`.
 
 The encoder takes `cw`, `ccw`, and `press`, each a normal action object.
 
-## Building the mapping GUI
+## Going native
 
-The config is plain JSON with a stable schema, so the editor is a separate
-concern from the runtime. Three ways to go, roughly in order of effort:
-
-**Local web UI (a weekend).** Have the agent serve a small localhost page that
-reads and writes `profiles.json`. Svelte, your own tokens, done. No signing, no
-packaging, and the agent already hot-reloads. Best value per hour.
+The localhost editor covers the mapping problem, but it's a browser tab, not an
+app — no dock icon, no menu bar, and Learn mode is stuck with whatever
+shortcuts the browser is willing to pass through. Two ways to fix that, if it
+ever becomes worth the effort:
 
 **Tauri + Svelte (a week or two).** Real `.app`, tray icon, launches at login.
-You'd move the serial loop into Rust (`serialport`), keystroke synthesis to
-`enigo`, and frontmost-app detection to `objc2-app-kit`. Lets you keep the whole
-UI in your existing frontend stack.
+The editor's markup ports over more or less directly. You'd move the serial
+loop into Rust (`serialport`), keystroke synthesis to `enigo`, and
+frontmost-app detection to `objc2-app-kit`.
 
 **SwiftUI menu bar app (a week or two, steeper ramp).** The most native result.
 `NSWorkspace`, `CGEventPost`, and POSIX serial are all first-class, so the agent
-collapses into the app with no Python runtime to ship. Worth it if this ever
-becomes a thing you distribute.
+collapses into the app with no Python runtime to ship. A global event tap also
+means Learn mode could capture `cmd+w` and friends, which the browser can't.
+Worth it if this ever becomes a thing you distribute.
 
-Two features that will matter more than they sound:
+Either way the JSON schema and `/api` shape stay as they are, so the two can
+coexist during a port rather than requiring a big-bang switch.
 
-- **Learn mode.** Press a pad key to select the slot, then press the real
-  shortcut on your keyboard to capture it. Typing `cmd+shift+opt+e` into a text
-  field is how these tools become tedious.
-- **Grab frontmost app.** A button that captures the bundle ID and icon of
-  whatever was in front, so you never touch `whoami` again.
+Still worth building whenever the native app happens:
+
+- **Learn mode from the pad itself.** Press a pad key to select the slot rather
+  than clicking it, so your hands never leave the hardware.
+- **App icons in the profile list.** `NSWorkspace` already has them, and a list
+  of bundle IDs is harder to scan than a list of icons.
 
 ## Off-the-shelf alternative
 
