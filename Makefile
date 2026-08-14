@@ -2,7 +2,7 @@ CIRCUITPY ?= /Volumes/CIRCUITPY
 PY := .venv/bin/python3
 UI_PORT ?= 8765
 
-.PHONY: setup dev deploy libs run ui ports whoami test
+.PHONY: setup dev deploy libs libs-reset run ui ports whoami test
 
 setup:                ## create venv and install agent deps
 	python3 -m venv .venv
@@ -14,7 +14,12 @@ dev:                  ## same, plus the test dependencies
 	$(PY) -m pip install --upgrade pip
 	$(PY) -m pip install -r agent/requirements-dev.txt
 
-libs:                 ## install CircuitPython libs onto the pad
+libs:                 ## install CircuitPython libs onto the pad (matches the board's version)
+	circup install adafruit_macropad adafruit_display_text adafruit_display_shapes
+
+libs-reset:           ## wipe lib/ and reinstall — use after a CircuitPython major upgrade
+	@test -d $(CIRCUITPY) || (echo "CIRCUITPY not mounted at $(CIRCUITPY)"; exit 1)
+	rm -rf $(CIRCUITPY)/lib
 	circup install adafruit_macropad adafruit_display_text adafruit_display_shapes
 
 deploy:               ## copy firmware to the pad

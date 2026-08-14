@@ -37,14 +37,23 @@ Round-trip latency is ~2ms over USB CDC. You will not feel it.
 
 ### 1. Firmware
 
-Install CircuitPython 9.x on the MacroPad (double-tap reset, drag the UF2 to
+Install CircuitPython 10.x on the MacroPad (double-tap reset, drag the UF2 to
 the `RPI-RP2` drive). Then install the libraries and copy the code:
 
 ```bash
-pip3 install circup
+pip3 install --upgrade circup
 circup install adafruit_macropad adafruit_display_text adafruit_display_shapes
 cp firmware/boot.py firmware/code.py /Volumes/CIRCUITPY/
 ```
+
+`circup` reads the version off the board and pulls the matching bundle, so
+upgrading the UF2 first and re-running `circup install` is what gets you 10.x
+libraries. Libraries built for 9.x are not guaranteed to load on 10.x — if you
+are coming from an older install, delete `/Volumes/CIRCUITPY/lib` and let
+`circup` repopulate it rather than installing over the top.
+
+The firmware needs 10.x (or at minimum 9.x): `display.show()` was removed in
+CircuitPython 9 and `code.py` assigns `display.root_group` directly.
 
 Unplug and replug the pad. `boot.py` only takes effect after a hard reset —
 this is the step people miss. The OLED should read **Waiting for Mac**.
@@ -126,6 +135,32 @@ problem, which is the strongest argument for eventually building one.
 - `MACROPAD_UI_PORT` moves it; `MACROPAD_NO_UI=1` runs the agent headless.
 - If the port is taken — usually a second copy of the agent — it logs and keeps
   going. The pad still works without the editor.
+
+## Troubleshooting
+
+### The OLED and LEDs never change
+
+The pad sits on **Waiting for Mac** with dim blue keys while the agent looks
+happy. In order of likelihood:
+
+1. **`boot.py` hasn't taken effect.** Run `make ports`. If it lists only one
+   port, `usb_cdc.data` is not enabled — that port is the console, and the pad
+   has no channel to receive layers on. Copy `boot.py` to CIRCUITPY and
+   **unplug and replug**; a soft reset is not enough. The agent refuses to open
+   a lone console port rather than pretending it worked.
+2. **`code.py` stopped on a traceback.** Usually a missing or version-mismatched
+   library after a CircuitPython upgrade. Open the *console* port
+   (`screen /dev/cu.usbmodemXXXX 115200`) and look. `make libs-reset` fixes the
+   stale-bundle case.
+3. **Wrong port.** The agent picks the higher-numbered of the two. If your setup
+   differs, `MACROPAD_PORT=/dev/cu.usbmodemXXXX make run`.
+
+The agent prints a warning if it opens a port and the pad never answers within
+six seconds, and `/api/state` exposes the same thing as `padSilent`. It should
+never silently sit there writing into nothing.
+
+Keys doing nothing at all — but labels and colors updating fine — is the other
+failure, and it's Accessibility permission, not serial. See step 2 of Setup.
 
 ## Config reference
 

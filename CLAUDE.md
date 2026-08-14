@@ -39,7 +39,7 @@ Newline-delimited JSON over `usb_cdc.data`. Both sides buffer and split on
 Device → host:
 
 ```
-{"t":"hello"}                     on boot, and every 2s until the host replies
+{"t":"hello"}                     on boot, and every 2s until a layer arrives
 {"t":"key","i":0,"e":"down"}      i = 0..11, row-major, top-left first
 {"t":"key","i":0,"e":"up"}
 {"t":"enc","d":1}                 d = +1 cw, -1 ccw
@@ -57,6 +57,14 @@ The device treats *any* inbound message as proof of life and marks itself
 disconnected after `HOST_TIMEOUT` (5s) of silence. If you add a message type,
 it participates in liveness automatically.
 
+Liveness is *not* the same as having something on screen, and the two must stay
+separate. A `ping` proves the Mac is alive but paints nothing, so the pad keeps
+sending `hello` until an actual `layer` arrives — not merely until the host makes
+a noise. Tying the re-announce to liveness strands the pad on "Waiting for Mac"
+whenever a push is lost, because pings then keep it quiet forever. The agent
+also re-pushes the current layer every 5s for the same reason; the pad ignores a
+layer identical to the one it is already showing, so the repeat is free.
+
 ## Hard constraints — these have all bitten already
 
 - **`boot.py` needs a hard reset.** Editing it does nothing until the pad is
@@ -72,6 +80,13 @@ it participates in liveness automatically.
 - **Firmware runs CircuitPython, not CPython.** No threading, no `asyncio` in
   the main loop, limited stdlib. Keep `code.py` a single non-blocking loop.
   Never call a blocking `readline()` — check `in_waiting` first.
+- **Firmware targets CircuitPython 10.x.** `display.show()` was removed in 9,
+  so `code.py` assigns `display.root_group` directly and will not boot on 8.
+  Libraries must come from the bundle matching the board — `circup` picks it
+  from the board's version, so upgrade the UF2 *first*, then `make libs-reset`
+  to clear a stale `lib/` rather than installing over the top. A library that
+  fails to import stops `code.py` before the display loop: the OLED shows a
+  traceback, and the agent looks connected while nothing renders.
 - **Never let a bad mapping crash the agent.** `run_action` catches broadly on
   purpose. A typo in a user's JSON should log and continue.
 - **The editor API binds to `127.0.0.1` and must stay there.** Profiles carry

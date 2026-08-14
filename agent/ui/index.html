@@ -764,10 +764,16 @@ async function pollState() {
     const s = await fetch("/api/state").then(r => r.json());
     const changed = s.bundleId !== liveBundle;
     liveBundle = s.bundleId;
-    $("dot").className = "dot" + (s.connected ? " live" : "");
-    $("status-text").textContent = s.connected
-      ? `${s.appName || "—"} → ${s.profileName || "—"}`
-      : "pad not connected";
+    // An open port is not the same as a pad that answers. Without this the
+    // editor reads "live" while the OLED sits on its waiting screen, which
+    // is the single most confusing way for this to fail.
+    const live = s.connected && !s.padSilent;
+    $("dot").className = "dot" + (live ? " live" : "");
+    $("status-text").textContent = !s.connected
+      ? "pad not connected"
+      : s.padSilent
+        ? "port open, pad not answering — see agent log"
+        : `${s.appName || "—"} → ${s.profileName || "—"}`;
     if (changed) renderProfiles();
   } catch {
     $("dot").className = "dot";
