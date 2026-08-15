@@ -1,6 +1,8 @@
 MACROPAD ?= /Volumes/MACROPAD
 PY := .venv/bin/python3
-CIRCUP := .venv/bin/circup
+# circup is not in requirements*.txt — the README installs it globally. Prefer a
+# venv copy when one exists, otherwise fall back to PATH so both setups work.
+CIRCUP := $(if $(wildcard .venv/bin/circup),.venv/bin/circup,circup)
 UI_PORT ?= 8765
 
 .PHONY: setup dev deploy libs run ui ports whoami test
@@ -16,6 +18,10 @@ dev:                  ## same, plus the test dependencies
 	$(PY) -m pip install -r agent/requirements-dev.txt
 
 libs:                 ## install CircuitPython libs onto the pad
+	@command -v $(CIRCUP) >/dev/null 2>&1 || { \
+		echo "circup not found. Install it:  pip3 install circup"; \
+		exit 1; \
+	}
 	$(CIRCUP) --path $(MACROPAD) install adafruit_macropad adafruit_display_text adafruit_display_shapes
 
 deploy:               ## copy firmware to the pad
