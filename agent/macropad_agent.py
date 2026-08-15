@@ -41,6 +41,16 @@ CONFIG_PATH = Path(os.environ.get("MACROPAD_CONFIG", ROOT / "config" / "profiles
 ADAFRUIT_VID = 0x239A
 POLL_INTERVAL = 0.02
 APP_POLL_INTERVAL = 0.25
+PING_INTERVAL = 2.0
+# Belt and braces: the pad asks for a layer until it gets one, but a push can
+# still be lost if it lands while the pad is mid-boot. Re-pushing on a slow
+# cadence means a missed push self-heals in seconds instead of persisting
+# until the next app switch. The pad ignores a layer identical to the one it
+# is already showing, so this costs it nothing.
+LAYER_REPUSH_INTERVAL = 5.0
+# How long the pad may stay silent after we open the port before we say so.
+# It announces itself every 2s, so anything past this is a real problem.
+PAD_SILENCE_WARNING = 6.0
 
 keyboard = Controller()
 
@@ -196,12 +206,40 @@ def candidate_ports():
     )
 
 
+_warned = set()
+
+
+def warn_once(key: str, message: str) -> None:
+    """Print a diagnostic the first time only.
+
+    These live on paths the reconnect loop retries every second, and a
+    warning repeated 60 times a minute is indistinguishable from noise.
+    """
+    if key not in _warned:
+        _warned.add(key)
+        print(message)
+
+
 def find_port() -> str | None:
     override = os.environ.get("MACROPAD_PORT")
     if override:
         return override
     ports = candidate_ports()
     if not ports:
+        return None
+    if len(ports) == 1:
+        # One port means usb_cdc.data was never enabled, so this is the
+        # console. Opening it "works" — the agent would report success and
+        # then spend the session typing JSON at the REPL while the pad sat on
+        # its waiting screen. Refuse it and say why instead.
+        warn_once(
+            "console-only",
+            f"[agent] only one Adafruit serial port found ({ports[0].device}).\n"
+            "        That is the console — usb_cdc.data is not enabled, so the pad\n"
+            "        can never receive a layer. Copy firmware/boot.py to CIRCUITPY\n"
+            "        and UNPLUG/REPLUG the pad; boot.py does not take effect on a\n"
+            "        soft reset. Set MACROPAD_PORT to override this check.",
+        )
         return None
     # With console+data enabled the pad exposes two CDC ports.
     # The data channel is the higher-numbered one.
@@ -281,6 +319,10 @@ def main():
     last_app_poll = 0.0
     last_ping = 0.0
     last_app_list = 0.0
+    last_push = 0.0
+    last_pad_rx = 0.0
+    pad_spoke = False
+    silence_warned = False
 
     state = server.State()
     if os.environ.get("MACROPAD_NO_UI"):
@@ -308,7 +350,10 @@ def main():
                 port = serial.Serial(device, 115200, timeout=0)
                 buf.clear()
                 current_bundle = object()
-                state.update(connected=True, port=device)
+                last_pad_rx = time.monotonic()
+                pad_spoke = False
+                silence_warned = False
+                state.update(connected=True, port=device, padSilent=False)
                 print(f"[agent] connected to {device}")
             except serial.SerialException:
                 state.update(connected=False, port=None)
@@ -332,6 +377,7 @@ def main():
                 print(f"[agent] {name} ({bundle_id}) -> {profile['name']}")
                 try:
                     push_layer(port, profile)
+                    last_push = now
                 except serial.SerialException:
                     port = None
                     continue
@@ -344,13 +390,37 @@ def main():
             state.update(runningApps=running_apps())
 
         # --- keepalive ------------------------------------------------------
-        if now - last_ping > 2.0:
+        if now - last_ping > PING_INTERVAL:
             last_ping = now
             try:
                 port.write(b'{"t":"ping"}\n')
             except serial.SerialException:
                 port = None
                 continue
+
+        # --- re-push the current layer --------------------------------------
+        # A ping proves we are alive but paints nothing. Without this the only
+        # things that ever draw are an app switch and the pad's own hello, so a
+        # single lost push left the pad on its waiting screen indefinitely.
+        if now - last_push > LAYER_REPUSH_INTERVAL:
+            last_push = now
+            try:
+                push_layer(port, profile)
+            except serial.SerialException:
+                port = None
+                continue
+
+        # --- has the pad said anything? --------------------------------------
+        if not pad_spoke and not silence_warned and now - last_pad_rx > PAD_SILENCE_WARNING:
+            silence_warned = True  # once per connection, not once per pass
+            state.update(padSilent=True)
+            print(
+                f"[agent] no messages from the pad in {PAD_SILENCE_WARNING:.0f}s.\n"
+                f"        Writing to {port.port} but nothing is answering.\n"
+                "        Likely the console port rather than the data port, or code.py\n"
+                "        is not running (check the REPL for a traceback — a missing\n"
+                "        library from `make libs` stops it before the display loop)."
+            )
 
         # --- read events ----------------------------------------------------
         try:
@@ -377,8 +447,13 @@ def main():
                 msg = json.loads(line)
             except (ValueError, UnicodeDecodeError):
                 continue
+            last_pad_rx = now
+            if not pad_spoke:
+                pad_spoke = True
+                state.update(padSilent=False)
             if handle_message(msg, profile) == "hello":
                 push_layer(port, profile)
+                last_push = now
 
         time.sleep(POLL_INTERVAL)
 
@@ -399,8 +474,19 @@ def ports():
     if not found:
         print("No Adafruit devices found. Is the MacroPad plugged in?")
         return
-    for p in found:
-        print(f"{p.device:<28} {p.description}")
+    for i, p in enumerate(found):
+        role = "data" if len(found) > 1 and i == len(found) - 1 else "console"
+        print(f"{p.device:<28} {role:<8} {p.description}")
+
+    if len(found) == 1:
+        print(
+            "\nOnly one port. usb_cdc.data is NOT enabled, so the pad cannot\n"
+            "receive layers and the OLED will stay on 'Waiting for Mac'.\n"
+            "Copy firmware/boot.py to CIRCUITPY, then UNPLUG AND REPLUG the pad —\n"
+            "boot.py does not take effect on a soft reset."
+        )
+        return
+
     print(f"\nThe agent will use: {found[-1].device}")
     print("Override with MACROPAD_PORT=/dev/cu.usbmodemXXXX")
 

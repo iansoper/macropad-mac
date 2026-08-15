@@ -39,6 +39,9 @@ class State:
             "bundleId": None,
             "appName": None,
             "profileName": None,
+            # True once the port is open but the pad has never answered —
+            # usually the console port, or code.py stopped on a traceback.
+            "padSilent": False,
             "runningApps": [],
         }
 

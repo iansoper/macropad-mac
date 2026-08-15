@@ -23,6 +23,9 @@ Protocol: newline-delimited JSON over usb_cdc.data.
 
 If the host goes quiet for HOST_TIMEOUT seconds the pad falls back to a local
 volume knob so it is never completely dead.
+
+Targets CircuitPython 10.x. `display.show()` was removed in 9, so this assigns
+`display.root_group` directly; on 8 it would raise AttributeError at boot.
 """
 
 import json
@@ -75,10 +78,7 @@ title = label.Label(
 )
 group.append(title)
 
-try:
-    macropad.display.root_group = group  # CircuitPython 9+
-except AttributeError:
-    macropad.display.show(group)  # CircuitPython 8
+macropad.display.root_group = group
 
 
 def render(name, labels, colors):
@@ -100,6 +100,14 @@ buf = bytearray()
 last_rx = 0.0
 connected = False
 
+# Liveness and "there is a layer on screen" are two different things, and
+# conflating them wedges the pad: a {"t":"ping"} proves the Mac is alive but
+# draws nothing, so if we stopped announcing on liveness alone we would sit on
+# the "Waiting for Mac" screen forever while the agent happily pinged away.
+# Keep asking until an actual layer lands.
+have_layer = False
+last_layer_line = None  # raw bytes of the layer currently rendered
+
 
 def send(obj):
     if serial is None or not serial.connected:
@@ -111,11 +119,20 @@ def send(obj):
 
 
 def handle(line):
+    global have_layer, last_layer_line
     try:
         msg = json.loads(line)
     except ValueError:
         return
     if msg.get("t") == "layer":
+        have_layer = True
+        # The agent re-pushes the current layer periodically so a dropped
+        # push can't leave us stale. Byte-comparing against what is already
+        # on screen makes that repeat free instead of a redraw every few
+        # seconds.
+        if line == last_layer_line:
+            return
+        last_layer_line = line
         render(
             msg.get("name", ""),
             msg.get("labels", []),
@@ -157,9 +174,15 @@ while True:
     now = time.monotonic()
     if connected and (now - last_rx) > HOST_TIMEOUT:
         connected = False
+        have_layer = False
+        last_layer_line = None  # the disconnected screen replaced it
         disconnected_screen()
-    if not connected and (now - last_hello) > 2.0:
-        send({"t": "hello"})  # re-announce until the agent answers
+    if not have_layer and (now - last_hello) > 2.0:
+        # Re-announce until we actually have a layer, not merely until the
+        # host makes a noise. Every hello sent before the Mac opens the port
+        # is dropped by send(), so this retry is the only thing that gets us
+        # a layer when the agent was already running before we booted.
+        send({"t": "hello"})
         last_hello = now
 
     event = macropad.keys.events.get()
