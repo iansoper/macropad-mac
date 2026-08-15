@@ -460,6 +460,539 @@
           "value": "cmd+l"
         }
       }
+    },
+    "company.thebrowser.Browser": {
+      "name": "Arc",
+      "keys": [
+        {
+          "label": "NewTab",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+t"
+          }
+        },
+        {
+          "label": "Close",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+w"
+          }
+        },
+        {
+          "label": "Reopen",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+t"
+          }
+        },
+        {
+          "label": "Back",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+["
+          }
+        },
+        {
+          "label": "Fwd",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+]"
+          }
+        },
+        {
+          "label": "Reload",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+r"
+          }
+        },
+        {
+          "label": "Side",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+s"
+          }
+        },
+        {
+          "label": "Find",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "DevTls",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+opt+i"
+          }
+        },
+        {
+          "label": "Pin",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+d"
+          }
+        },
+        {
+          "label": "CopyLk",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+c"
+          }
+        },
+        {
+          "label": "URL",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+l"
+          }
+        }
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "ctrl+tab"
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "ctrl+shift+tab"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+l"
+        }
+      }
+    },
+    "co.noteplan.NotePlan3": {
+      "name": "NotePlan",
+      "keys": [
+        {
+          "label": "Task",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "text",
+            "value": "* "
+          }
+        },
+        {
+          "label": "Check",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "text",
+            "value": "+ "
+          }
+        },
+        {
+          "label": "Bullet",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "text",
+            "value": "- "
+          }
+        },
+        {
+          "label": "Bold",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+b"
+          }
+        },
+        {
+          "label": "Italic",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "H1",
+          "color": "#C4703F",
+          "action": {
+            "type": "text",
+            "value": "# "
+          }
+        },
+        {
+          "label": "Today",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+t"
+          }
+        },
+        {
+          "label": "Search",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+f"
+          }
+        },
+        {
+          "label": "New",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "Link",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "text",
+            "value": "[["
+          }
+        },
+        {
+          "label": "Quote",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "text",
+            "value": "> "
+          }
+        },
+        null
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+="
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+-"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+s"
+        }
+      }
+    },
+    "cc.eagle.app": {
+      "name": "Eagle",
+      "keys": [
+        {
+          "label": "Star1",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "1"
+          }
+        },
+        {
+          "label": "Star2",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "2"
+          }
+        },
+        {
+          "label": "Star3",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "3"
+          }
+        },
+        {
+          "label": "Star4",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "4"
+          }
+        },
+        {
+          "label": "Star5",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "5"
+          }
+        },
+        {
+          "label": "Prevw",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "space"
+          }
+        },
+        {
+          "label": "Search",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "NewFld",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+n"
+          }
+        },
+        {
+          "label": "Info",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "Dup",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+d"
+          }
+        },
+        {
+          "label": "Del",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+delete"
+          }
+        },
+        null
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+="
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+-"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+f"
+        }
+      }
+    },
+    "com.apple.iCal": {
+      "name": "Calendar",
+      "keys": [
+        {
+          "label": "Day",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+1"
+          }
+        },
+        {
+          "label": "Week",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+2"
+          }
+        },
+        {
+          "label": "Month",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+3"
+          }
+        },
+        {
+          "label": "Prev",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+left"
+          }
+        },
+        {
+          "label": "Today",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+t"
+          }
+        },
+        {
+          "label": "Next",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+right"
+          }
+        },
+        {
+          "label": "New",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "Info",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "Find",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "Year",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+4"
+          }
+        },
+        {
+          "label": "Reload",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+r"
+          }
+        },
+        null
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+right"
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+left"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+t"
+        }
+      }
+    },
+    "com.apple.reminders": {
+      "name": "Reminders",
+      "keys": [
+        {
+          "label": "Today",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+1"
+          }
+        },
+        {
+          "label": "Sched",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+2"
+          }
+        },
+        {
+          "label": "All",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+3"
+          }
+        },
+        {
+          "label": "Flags",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+4"
+          }
+        },
+        {
+          "label": "Compl",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+5"
+          }
+        },
+        {
+          "label": "New",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "List",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+n"
+          }
+        },
+        {
+          "label": "Find",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "Info",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "Indent",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+]"
+          }
+        },
+        {
+          "label": "Outdnt",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+["
+          }
+        },
+        null
+      ]
     }
   }
 }
