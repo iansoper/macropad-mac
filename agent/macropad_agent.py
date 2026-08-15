@@ -31,6 +31,7 @@ import serial
 from serial.tools import list_ports
 
 from AppKit import NSWorkspace
+from Foundation import NSDate, NSRunLoop
 from pynput.keyboard import Controller, Key
 
 import server
@@ -248,6 +249,15 @@ def find_port() -> str | None:
 # -------------------------------------------------------------------- app ---
 
 def frontmost_bundle_id():
+    # NSWorkspace does not poll for the frontmost app — it learns about
+    # switches from notifications, and those are only delivered while the run
+    # loop spins. This process has no AppKit event loop of its own, so without
+    # pumping it here the value stays pinned to whatever was frontmost when the
+    # agent started, and no layer ever switches. 10ms is enough to drain the
+    # queue and is cheap at APP_POLL_INTERVAL.
+    NSRunLoop.currentRunLoop().runUntilDate_(
+        NSDate.dateWithTimeIntervalSinceNow_(0.01)
+    )
     app = NSWorkspace.sharedWorkspace().frontmostApplication()
     if app is None:
         return None, None

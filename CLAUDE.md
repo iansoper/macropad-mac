@@ -19,7 +19,7 @@ renders whatever layer the Mac pushes back. All mapping lives in
 This is a deliberate trade, not an oversight. Do not "optimize" by moving
 keymaps into firmware. The reasons:
 
-- Remapping is a JSON edit, not a reflash + file copy to CIRCUITPY.
+- Remapping is a JSON edit, not a reflash + file copy to MACROPAD.
 - Actions aren't limited to keystrokes — shell, AppleScript, Shortcuts, URL
   schemes all work because the host executes them.
 - The planned GUI is just a `profiles.json` editor. Firmware never changes again.
@@ -69,6 +69,30 @@ layer identical to the one it is already showing, so the repeat is free.
 
 - **`boot.py` needs a hard reset.** Editing it does nothing until the pad is
   unplugged and replugged. Without it `usb_cdc.data` is `None`.
+- **Eject the drive before resetting the pad.** `make deploy` leaves macOS
+  holding the volume with writes still buffered. Resetting the board then —
+  by replug, by the reset button, or via `microcontroller.reset()` — is an
+  unclean unmount, and it corrupts the FAT directory. The damage does not look
+  like damage: `fsck_msdos` reports the volume clean because the FAT chains are
+  intact, while the root directory fills with entries that enumerate but fail
+  to `stat`, and macOS then refuses to mount at all. Run
+  `diskutil eject /Volumes/MACROPAD` first. If it does get corrupted, the repair
+  is `storage.erase_filesystem()` from the REPL, not Disk Utility.
+- **Repeated re-enumeration can wedge `diskarbitrationd`.** After enough
+  reset cycles it starts reporting "Volume(s) mounted successfully" while
+  `diskutil info` still says `Mounted: No`. No amount of `diskutil` retrying
+  fixes it — replug the pad, or restart the daemon.
+- **Plug the pad straight into the Mac, not through a hub.** On macOS 26 the
+  drive mounts via `fskit` (check `mount` for the flag), and behind a chained
+  hub that path writes unreliably: files land truncated to 0 bytes, the
+  directory corrupts in the way described above, and eventually the volume
+  throws `EIO` and macOS force-remounts it read-only. The same `circup install`
+  that fails through a hub succeeds on a direct port.
+- **`circup` trusts a directory's existence, not its contents.** A partial
+  library install makes it print "'x' is already installed" forever. Force it
+  with `circup install -U`, then confirm nothing landed empty:
+  `find /Volumes/MACROPAD/lib -name '*.mpy' -size 0`. A missing submodule
+  surfaces only as an `ImportError` at boot, which reads as a dead OLED.
 - **The pad exposes two serial ports** (console + data). The data channel is
   the higher-numbered `/dev/cu.usbmodem*`. `agent/macropad_agent.py ports`
   shows the selection; `MACROPAD_PORT` overrides it.
@@ -157,7 +181,7 @@ the pad.
 
 ## Rules for AI agents
 
-- Don't reflash or copy to `/Volumes/CIRCUITPY` without being asked. Use
+- Don't reflash or copy to `/Volumes/MACROPAD` without being asked. Use
   `make deploy` and tell the user to replug if `boot.py` changed.
 - Don't add dependencies to `agent/requirements.txt` without flagging it. The
   current three are load-bearing and deliberately minimal.

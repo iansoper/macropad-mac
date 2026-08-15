@@ -24,7 +24,7 @@ and keys can only ever send keystrokes.
 
 Here the pad reports raw events and the Mac decides what they mean. Consequences:
 
-- Remapping is a JSON edit. No reflashing, no file copying to CIRCUITPY.
+- Remapping is a JSON edit. No reflashing, no file copying to MACROPAD.
 - Actions aren't limited to keystrokes — shell commands, `open -a`, AppleScript,
   Shortcuts, and URL schemes all work.
 - A future GUI just edits `profiles.json`. The firmware never changes again.
@@ -43,7 +43,7 @@ the `RPI-RP2` drive). Then install the libraries and copy the code:
 ```bash
 pip3 install --upgrade circup
 circup install adafruit_macropad adafruit_display_text adafruit_display_shapes
-cp firmware/boot.py firmware/code.py /Volumes/CIRCUITPY/
+cp firmware/boot.py firmware/code.py /Volumes/MACROPAD/
 ```
 
 `circup` reads the version off the board and pulls the matching bundle, so
