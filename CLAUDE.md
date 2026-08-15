@@ -74,6 +74,17 @@ it participates in liveness automatically.
   reset cycles it starts reporting "Volume(s) mounted successfully" while
   `diskutil info` still says `Mounted: No`. No amount of `diskutil` retrying
   fixes it — replug the pad, or restart the daemon.
+- **Plug the pad straight into the Mac, not through a hub.** On macOS 26 the
+  drive mounts via `fskit` (check `mount` for the flag), and behind a chained
+  hub that path writes unreliably: files land truncated to 0 bytes, the
+  directory corrupts in the way described above, and eventually the volume
+  throws `EIO` and macOS force-remounts it read-only. The same `circup install`
+  that fails through a hub succeeds on a direct port.
+- **`circup` trusts a directory's existence, not its contents.** A partial
+  library install makes it print "'x' is already installed" forever. Force it
+  with `circup install -U`, then confirm nothing landed empty:
+  `find /Volumes/MACROPAD/lib -name '*.mpy' -size 0`. A missing submodule
+  surfaces only as an `ImportError` at boot, which reads as a dead OLED.
 - **The pad exposes two serial ports** (console + data). The data channel is
   the higher-numbered `/dev/cu.usbmodem*`. `agent/macropad_agent.py ports`
   shows the selection; `MACROPAD_PORT` overrides it.
