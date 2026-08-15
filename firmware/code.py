@@ -125,7 +125,7 @@ def handle(line):
 
 def pump_serial():
     """Read whatever is waiting and dispatch complete lines."""
-    global last_rx, connected
+    global buf, last_rx, connected
     if serial is None or not serial.in_waiting:
         return
     buf.extend(serial.read(serial.in_waiting))
@@ -134,7 +134,9 @@ def pump_serial():
         if idx < 0:
             break
         line = bytes(buf[:idx])
-        del buf[: idx + 1]
+        # CircuitPython's bytearray supports neither `del buf[:n]` nor slice
+        # assignment, so rebind instead of mutating in place.
+        buf = bytearray(buf[idx + 1 :])
         last_rx = time.monotonic()
         if not connected:
             connected = True
