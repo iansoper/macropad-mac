@@ -1094,6 +1094,100 @@
           "value": "cmd+k"
         }
       }
+    },
+    "com.electron.wispr-flow": {
+      "name": "Wispr Flow",
+      "keys": [
+        {
+          "label": "Search",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "Copy",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+c"
+          }
+        },
+        {
+          "label": "Paste",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+v"
+          }
+        },
+        {
+          "label": "Undo",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+z"
+          }
+        },
+        {
+          "label": "Redo",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+z"
+          }
+        },
+        {
+          "label": "SelAll",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "cmd+a"
+          }
+        },
+        {
+          "label": "Prefs",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+,"
+          }
+        },
+        {
+          "label": "Reload",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+r"
+          }
+        },
+        {
+          "label": "Close",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+w"
+          }
+        },
+        null,
+        null,
+        null
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+="
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+-"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+f"
+        }
+      }
     }
   }
 }
