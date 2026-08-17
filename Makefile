@@ -6,7 +6,15 @@ CIRCUP := $(if $(wildcard .venv/bin/circup),.venv/bin/circup,circup)
 LIBS := adafruit_macropad adafruit_display_text adafruit_display_shapes
 UI_PORT ?= 8765
 
-.PHONY: setup dev deploy libs libs-reset run ui ports whoami test
+.PHONY: setup dev deploy libs libs-reset run ui ports whoami test \
+        icon app app-dev app-run app-install
+
+APP := dist/MacroPad.app
+# Ad-hoc by default. Set to a self-signed code-signing identity from your
+# login keychain to keep the signature stable across rebuilds — an ad-hoc
+# signature changes every build, and TCC drops the Accessibility grant with
+# it, so you would be re-granting after every `make app`.
+SIGN_IDENTITY ?= -
 
 # A stale mount point left by an unclean unplug is a real directory, so a bare
 # `test -d` passes against nothing at all and the recipe then fails somewhere
@@ -75,3 +83,33 @@ whoami:               ## print frontmost app bundle IDs
 
 test:                 ## run the test suite (needs `make dev` first)
 	$(PY) -m pytest -q
+
+# ------------------------------------------------------------------- app ---
+
+icon:                 ## render build/MacroPad.icns from agent/icon.py
+	$(PY) tools/make_icon.py
+
+app: icon             ## build dist/MacroPad.app and sign it
+	rm -rf $(APP)
+	$(PY) setup_app.py py2app
+	codesign --force --deep --sign $(SIGN_IDENTITY) $(APP)
+	@echo 'Built $(APP) — run `make app-install` to put it in /Applications.'
+
+# Alias mode symlinks the source into the bundle instead of copying it, so
+# edits are live and a rebuild is seconds rather than a minute. The bundle
+# is not relocatable — it only runs from this checkout — which is exactly
+# what you want while iterating.
+app-dev: icon         ## build a live-source bundle for development
+	rm -rf $(APP)
+	$(PY) setup_app.py py2app -A
+	codesign --force --deep --sign $(SIGN_IDENTITY) $(APP)
+
+app-run:              ## run the built app in the foreground, logging to the terminal
+	$(APP)/Contents/MacOS/MacroPad
+
+app-install:          ## copy the built app to /Applications
+	@test -d $(APP) || { echo "No $(APP). Run: make app"; exit 1; }
+	rm -rf /Applications/MacroPad.app
+	cp -R $(APP) /Applications/
+	@echo "Installed. Grant Accessibility to /Applications/MacroPad.app,"
+	@echo "then launch it and use Start at Login from the menu bar."

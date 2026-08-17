@@ -122,19 +122,58 @@ layer identical to the one it is already showing, so the repeat is free.
   touching the serial port.
 - **Config writes must stay atomic.** The agent reloads on mtime change, so a
   non-atomic write can be read half-finished. Use `write_config_atomically`.
+- **`Runtime.tick()` must never block.** Under `app.py` it runs from an
+  `NSTimer` on the main run loop, so a `time.sleep()` in there freezes the menu
+  bar and the editor window along with the agent. This is why the reconnect
+  backoff is a `next_connect` deadline rather than the `time.sleep(1.0)` the
+  loop used to carry. The timer is also registered in `NSRunLoopCommonModes` —
+  a default-mode timer stops firing while a menu is open, which would kill the
+  pad for as long as you hold the menu down.
+- **Never compute bundled paths from `__file__`.** Inside the app, modules load
+  from a zip and `Contents/Resources` is read-only. `agent/paths.py` owns this:
+  the UI comes from `RESOURCEPATH`, and the live config moves to
+  `~/Library/Application Support/MacroPad/`, seeded once from the bundled copy
+  and never overwritten afterwards. From source everything resolves exactly as
+  it always did, which is why `make run` and the tests are unaffected.
+- **Every method on a pyobjc `NSObject` subclass becomes an ObjC method.**
+  The selector is derived from the name, so a plain helper like `_label(self,
+  title)` is rejected at class-creation time with `BadPrototypeError`.
+  Decorate helpers with `@objc.python_method`, and use `objc.super(...)` rather
+  than `super()`.
+- **Ad-hoc signing resets the Accessibility grant.** The signature changes
+  every build, so TCC stops recognising the app and keys silently stop working
+  — the same symptom as never having granted it. Build with
+  `make app SIGN_IDENTITY="<a self-signed cert>"` to keep it stable.
+- **py2app needs the runtime-chosen backends listed.** `pyserial` and `pynput`
+  both pick a platform module at import, and modulegraph does not see it. They
+  are in `setup_app.py` under both `packages` and `includes`; a missing one
+  shows up as an `ImportError` at launch with no terminal to print to, which
+  is why `app.py` redirects stdout before importing anything interesting.
 
 ## Layout
 
 ```
 firmware/boot.py         enables usb_cdc.data
 firmware/code.py         event reporting + layer rendering
-agent/macropad_agent.py  serial loop, app watcher, action executor
+agent/macropad_agent.py  Runtime.tick(), app watcher, action executor
 agent/server.py          localhost HTTP API + State snapshot (stdlib only)
+agent/paths.py           source-vs-bundle path resolution (stdlib only)
+agent/app.py             MacroPad.app: NSApplication + menu bar, drives tick()
+agent/editor_window.py   the editor in a WKWebView
+agent/loginitem.py       Start at Login (writes the LaunchAgent plist)
+agent/icon.py            draws the mark for the menu bar and the .icns
 agent/ui/index.html      the mapping editor, one self-contained file
-config/profiles.json     the actual mappings
-launchd/                 run-at-login plist
+config/profiles.json     the actual mappings (the seed, once bundled)
+launchd/                 run-at-login plist for running from source
+tools/make_icon.py       renders build/MacroPad.icns
+setup_app.py             py2app build config
 tests/                   pytest suite for the parts that run off-Mac
 ```
+
+Two entry points, one loop. `macropad_agent.main()` drives `Runtime.tick()` in
+a `while` loop for terminal use; `app.py` drives the same `tick()` from an
+`NSTimer`. Adding behavior to one driver and not the other is the mistake to
+avoid — put it in `tick()`.
 
 ## Config schema
 
@@ -156,8 +195,14 @@ Hardware can't be tested in CI, and neither can anything importing `AppKit` or
 testable on any machine — keep it that way; don't import from
 `macropad_agent.py` into it.
 
-Covered today (`tests/test_server.py`): config validation, atomic writes,
-request routing, and the loopback bind.
+Covered today:
+
+- `tests/test_server.py` — config validation, atomic writes, request routing,
+  the loopback bind.
+- `tests/test_paths.py` — source-vs-bundle resolution, including the frozen
+  branch, which running from source never exercises.
+- `tests/test_loginitem.py` — the LaunchAgent plist. It fails at login, hours
+  later, with nothing attached to print to, so it is checked here instead.
 
 Still uncovered and worth adding:
 
@@ -166,7 +211,8 @@ Still uncovered and worth adding:
 
 Both live in `macropad_agent.py` behind the AppKit import, so testing them
 means either extracting them into a module that doesn't import AppKit, or
-stubbing the macOS modules in `conftest.py`. Extraction is the cleaner path.
+stubbing the macOS modules in `conftest.py`. Extraction is the cleaner path,
+and `paths.py` is the pattern to copy — stdlib-only, imported by both halves.
 
 Prefer pure functions that can be exercised without a serial port or a display.
 When touching `Config` or the parser, add a test rather than manual-checking on
@@ -192,22 +238,27 @@ the pad.
 
 ## Current state and next step
 
-Working: firmware, agent, app-aware switching, hot reload, launchd, and the
+Working: firmware, agent, app-aware switching, hot reload, launchd, the
 localhost mapping editor (grid editing, fall-through display and override,
-learn mode, app picker, atomic validated saves).
+learn mode, app picker, atomic validated saves), and `MacroPad.app` — a menu
+bar build of the same agent with the editor in a WKWebView.
 
 The editor is served from inside the agent process rather than as a second
 daemon — one thing to launch, one source of truth. It has no build step and no
 frontend dependencies on purpose: it's a single HTML file with inline CSS and
-vanilla JS, so it can't rot when a toolchain moves on.
+vanilla JS, so it can't rot when a toolchain moves on. The app wraps that same
+process rather than replacing it, which is why going native cost one dependency
+instead of a rewrite.
 
-Known limitation, documented in the README: **the browser swallows `cmd+w`,
+Known limitation, documented in the README: **a browser swallows `cmd+w`,
 `cmd+t`, `cmd+q`, and `cmd+n` before the page sees them**, so learn mode can't
-capture those four. They must be typed by hand. This is not fixable from within
-a browser; a native app with a global event tap would solve it.
+capture those four in a browser tab. The app's WKWebView should get them, since
+a menu bar app installs no main menu to claim those key equivalents — hence no
+⌘Q on the Quit item. **Unverified against hardware; confirm before believing
+it.**
 
-Next, if it's worth the effort — going native (Tauri or SwiftUI). The JSON
-schema and `/api` shape are stable, so a port can run alongside the current
-editor instead of replacing it in one go. Also still open: **learn mode driven
-from the pad itself** (press a pad key to pick the slot), and **app icons in
-the profile list** via `NSWorkspace`.
+Still open: **learn mode driven from the pad itself** (press a pad key to pick
+the slot), and **app icons in the profile list** via `NSWorkspace`. Also worth
+noting — with no pad connected, `tick()` returns before polling the frontmost
+app, so the menu bar and the editor's app picker stay empty until the pad is
+plugged in. That predates the app but is far more visible in it.

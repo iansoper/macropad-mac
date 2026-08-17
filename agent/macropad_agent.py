@@ -34,10 +34,12 @@ from AppKit import NSWorkspace
 from Foundation import NSDate, NSRunLoop
 from pynput.keyboard import Controller, Key
 
+import paths
 import server
 
-ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = Path(os.environ.get("MACROPAD_CONFIG", ROOT / "config" / "profiles.json"))
+# Resolved once at import so `ports`/`whoami` and the run loop agree, but the
+# real answer depends on whether we are inside MacroPad.app — see paths.py.
+CONFIG_PATH = paths.config_path()
 ADAFRUIT_VID = 0x239A
 POLL_INTERVAL = 0.02
 APP_POLL_INTERVAL = 0.25
@@ -248,16 +250,22 @@ def find_port() -> str | None:
 
 # -------------------------------------------------------------------- app ---
 
-def frontmost_bundle_id():
+def frontmost_bundle_id(pump_runloop: bool = True):
     # NSWorkspace does not poll for the frontmost app — it learns about
-    # switches from notifications, and those are only delivered while the run
-    # loop spins. This process has no AppKit event loop of its own, so without
-    # pumping it here the value stays pinned to whatever was frontmost when the
-    # agent started, and no layer ever switches. 10ms is enough to drain the
-    # queue and is cheap at APP_POLL_INTERVAL.
-    NSRunLoop.currentRunLoop().runUntilDate_(
-        NSDate.dateWithTimeIntervalSinceNow_(0.01)
-    )
+    # switches from notifications, and those are only delivered while a run
+    # loop spins. Run from a terminal there is no AppKit event loop, so
+    # without pumping it here the value stays pinned to whatever was frontmost
+    # when the agent started, and no layer ever switches. 10ms is enough to
+    # drain the queue and is cheap at APP_POLL_INTERVAL.
+    #
+    # Inside MacroPad.app there already is one: NSApplication owns the main
+    # run loop and dispatches the timer that lands here, so the app passes
+    # pump_runloop=False. Spinning a run loop from inside a callback that
+    # same run loop dispatched is re-entrancy for no gain.
+    if pump_runloop:
+        NSRunLoop.currentRunLoop().runUntilDate_(
+            NSDate.dateWithTimeIntervalSinceNow_(0.01)
+        )
     app = NSWorkspace.sharedWorkspace().frontmostApplication()
     if app is None:
         return None, None
@@ -310,152 +318,215 @@ def handle_message(msg, profile):
     return None
 
 
-def main():
-    config = Config(CONFIG_PATH)
-    port = None
-    buf = bytearray()
-    current_bundle = object()  # sentinel so the first check always fires
-    profile = config.resolve(None)
-    last_app_poll = 0.0
-    last_ping = 0.0
-    last_app_list = 0.0
-    last_push = 0.0
-    last_pad_rx = 0.0
-    pad_spoke = False
-    silence_warned = False
+RECONNECT_INTERVAL = 1.0
 
-    state = server.State()
-    if os.environ.get("MACROPAD_NO_UI"):
-        print("[agent] editor disabled (MACROPAD_NO_UI)")
-    else:
+
+class Runtime:
+    """The agent loop, as one pass at a time.
+
+    Two things drive this. From a terminal, main() calls tick() in a while
+    loop with a sleep. Inside MacroPad.app, an NSTimer on the main run loop
+    calls the same tick() — which is what keeps pyserial and AppKit on a
+    single thread in both cases, exactly as the HTTP layer assumes.
+
+    The rule that falls out of that: **tick() must never block.** Under the
+    timer, a sleep in here freezes the menu bar and the editor window along
+    with the agent. That is why the reconnect backoff below is a deadline
+    rather than the time.sleep(1.0) this loop used to carry.
+    """
+
+    def __init__(self, config_path: Path | None = None, pump_runloop: bool = True):
+        self.config = Config(config_path or CONFIG_PATH)
+        self.state = server.State()
+        self.pump_runloop = pump_runloop
+        self.httpd = None
+        self.ui_port = None
+
+        self.port = None
+        self.buf = bytearray()
+        self.current_bundle = object()  # sentinel so the first check always fires
+        self.profile = self.config.resolve(None)
+        self.next_connect = 0.0
+        self.last_app_poll = 0.0
+        self.last_ping = 0.0
+        self.last_app_list = 0.0
+        self.last_push = 0.0
+        self.last_pad_rx = 0.0
+        self.pad_spoke = False
+        self.silence_warned = False
+
+    # -------------------------------------------------------- lifecycle ---
+
+    def start(self):
+        if os.environ.get("MACROPAD_NO_UI"):
+            print("[agent] editor disabled (MACROPAD_NO_UI)")
+            return
         try:
-            ui_port = server.serve(CONFIG_PATH, state)
-            print(f"[agent] editor on http://127.0.0.1:{ui_port}")
+            self.httpd = server.serve(self.config.path, self.state)
+            self.ui_port = self.httpd.server_address[1]
+            print(f"[agent] editor on http://127.0.0.1:{self.ui_port}")
         except OSError as exc:
             # Almost always "address already in use" from a second copy of
             # the agent. Not fatal — the pad still works without the editor.
             print(f"[agent] editor unavailable: {exc}")
 
-    print("[agent] running. Ctrl-C to stop.")
+    def stop(self):
+        if self.httpd is not None:
+            self.httpd.shutdown()
+            self.httpd.server_close()
+            self.httpd = None
+        self._drop_port()
 
-    while True:
-        # --- connect / reconnect -------------------------------------------
-        if port is None:
-            device = find_port()
-            if device is None:
-                state.update(connected=False, port=None)
-                time.sleep(1.0)
-                continue
+    def _drop_port(self):
+        if self.port is not None:
             try:
-                port = serial.Serial(device, 115200, timeout=0)
-                buf.clear()
-                current_bundle = object()
-                last_pad_rx = time.monotonic()
-                pad_spoke = False
-                silence_warned = False
-                state.update(connected=True, port=device, padSilent=False)
-                print(f"[agent] connected to {device}")
-            except serial.SerialException:
-                state.update(connected=False, port=None)
-                time.sleep(1.0)
-                continue
+                self.port.close()
+            except Exception:
+                pass
+            self.port = None
+        self.state.update(connected=False, port=None)
 
+    # ------------------------------------------------------------- pass ---
+
+    def tick(self):
         now = time.monotonic()
 
-        # --- config hot reload ---------------------------------------------
-        if config.reload():
-            current_bundle = object()
+        if self.port is None:
+            if now < self.next_connect:
+                return
+            self.next_connect = now + RECONNECT_INTERVAL
+            if not self._connect(now):
+                return
 
-        # --- frontmost app --------------------------------------------------
-        if now - last_app_poll > APP_POLL_INTERVAL:
-            last_app_poll = now
-            bundle_id, name = frontmost_bundle_id()
-            if bundle_id != current_bundle:
-                current_bundle = bundle_id
-                profile = config.resolve(bundle_id)
-                state.update(bundleId=bundle_id, appName=name, profileName=profile["name"])
-                print(f"[agent] {name} ({bundle_id}) -> {profile['name']}")
-                try:
-                    push_layer(port, profile)
-                    last_push = now
-                except serial.SerialException:
-                    port = None
-                    continue
+        if self.config.reload():
+            self.current_bundle = object()
 
-        # --- running apps, for the editor's app picker -----------------------
+        if now - self.last_app_poll > APP_POLL_INTERVAL:
+            self.last_app_poll = now
+            if not self._sync_frontmost(now):
+                return
+
         # Much heavier than the frontmost check, and it only feeds a UI that
         # polls on demand, so it runs on a slow cadence of its own.
-        if now - last_app_list > 5.0:
-            last_app_list = now
-            state.update(runningApps=running_apps())
+        if now - self.last_app_list > 5.0:
+            self.last_app_list = now
+            self.state.update(runningApps=running_apps())
 
-        # --- keepalive ------------------------------------------------------
-        if now - last_ping > PING_INTERVAL:
-            last_ping = now
+        if now - self.last_ping > PING_INTERVAL:
+            self.last_ping = now
             try:
-                port.write(b'{"t":"ping"}\n')
+                self.port.write(b'{"t":"ping"}\n')
             except serial.SerialException:
-                port = None
-                continue
+                self._drop_port()
+                return
 
-        # --- re-push the current layer --------------------------------------
         # A ping proves we are alive but paints nothing. Without this the only
         # things that ever draw are an app switch and the pad's own hello, so a
         # single lost push left the pad on its waiting screen indefinitely.
-        if now - last_push > LAYER_REPUSH_INTERVAL:
-            last_push = now
+        if now - self.last_push > LAYER_REPUSH_INTERVAL:
+            self.last_push = now
             try:
-                push_layer(port, profile)
+                push_layer(self.port, self.profile)
             except serial.SerialException:
-                port = None
-                continue
+                self._drop_port()
+                return
 
-        # --- has the pad said anything? --------------------------------------
-        if not pad_spoke and not silence_warned and now - last_pad_rx > PAD_SILENCE_WARNING:
-            silence_warned = True  # once per connection, not once per pass
-            state.update(padSilent=True)
-            print(
-                f"[agent] no messages from the pad in {PAD_SILENCE_WARNING:.0f}s.\n"
-                f"        Writing to {port.port} but nothing is answering.\n"
-                "        Likely the console port rather than the data port, or code.py\n"
-                "        is not running (check the REPL for a traceback — a missing\n"
-                "        library from `make libs` stops it before the display loop)."
-            )
+        self._warn_if_silent(now)
+        self._read_events(now)
 
-        # --- read events ----------------------------------------------------
+    # ---------------------------------------------------------- internals --
+
+    def _connect(self, now) -> bool:
+        device = find_port()
+        if device is None:
+            self.state.update(connected=False, port=None)
+            return False
         try:
-            waiting = port.in_waiting
+            self.port = serial.Serial(device, 115200, timeout=0)
+        except serial.SerialException:
+            self.state.update(connected=False, port=None)
+            return False
+        self.buf.clear()
+        self.current_bundle = object()
+        self.last_pad_rx = now
+        self.pad_spoke = False
+        self.silence_warned = False
+        self.state.update(connected=True, port=device, padSilent=False)
+        print(f"[agent] connected to {device}")
+        return True
+
+    def _sync_frontmost(self, now) -> bool:
+        """False if the port died pushing the new layer."""
+        bundle_id, name = frontmost_bundle_id(self.pump_runloop)
+        if bundle_id == self.current_bundle:
+            return True
+        self.current_bundle = bundle_id
+        self.profile = self.config.resolve(bundle_id)
+        self.state.update(
+            bundleId=bundle_id, appName=name, profileName=self.profile["name"])
+        print(f"[agent] {name} ({bundle_id}) -> {self.profile['name']}")
+        try:
+            push_layer(self.port, self.profile)
+            self.last_push = now
+        except serial.SerialException:
+            self._drop_port()
+            return False
+        return True
+
+    def _warn_if_silent(self, now):
+        if self.pad_spoke or self.silence_warned:
+            return
+        if now - self.last_pad_rx <= PAD_SILENCE_WARNING:
+            return
+        self.silence_warned = True  # once per connection, not once per pass
+        self.state.update(padSilent=True)
+        print(
+            f"[agent] no messages from the pad in {PAD_SILENCE_WARNING:.0f}s.\n"
+            f"        Writing to {self.port.port} but nothing is answering.\n"
+            "        Likely the console port rather than the data port, or code.py\n"
+            "        is not running (check the REPL for a traceback — a missing\n"
+            "        library from `make libs` stops it before the display loop)."
+        )
+
+    def _read_events(self, now):
+        try:
+            waiting = self.port.in_waiting
             if waiting:
-                buf.extend(port.read(waiting))
+                self.buf.extend(self.port.read(waiting))
         except (serial.SerialException, OSError):
             print("[agent] disconnected")
-            try:
-                port.close()
-            except Exception:
-                pass
-            port = None
-            state.update(connected=False, port=None)
-            continue
+            self._drop_port()
+            return
 
         while True:
-            idx = buf.find(b"\n")
+            idx = self.buf.find(b"\n")
             if idx < 0:
                 break
-            line = bytes(buf[:idx])
-            del buf[: idx + 1]
+            line = bytes(self.buf[:idx])
+            del self.buf[: idx + 1]
             try:
                 msg = json.loads(line)
             except (ValueError, UnicodeDecodeError):
                 continue
-            last_pad_rx = now
-            if not pad_spoke:
-                pad_spoke = True
-                state.update(padSilent=False)
-            if handle_message(msg, profile) == "hello":
-                push_layer(port, profile)
-                last_push = now
+            self.last_pad_rx = now
+            if not self.pad_spoke:
+                self.pad_spoke = True
+                self.state.update(padSilent=False)
+            if handle_message(msg, self.profile) == "hello":
+                push_layer(self.port, self.profile)
+                self.last_push = now
 
-        time.sleep(POLL_INTERVAL)
+
+def main():
+    runtime = Runtime()
+    runtime.start()
+    print("[agent] running. Ctrl-C to stop.")
+    try:
+        while True:
+            runtime.tick()
+            time.sleep(POLL_INTERVAL)
+    finally:
+        runtime.stop()
 
 
 def whoami():
