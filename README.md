@@ -209,7 +209,7 @@ Keys are indexed 0–11, row-major, top-left first (3 wide × 4 tall).
 ```json
 {
   "label": "Export",
-  "color": "#3E8E9B",
+  "color": "#00E5FF",
   "action": { "type": "keys", "value": "cmd+shift+e" }
 }
 ```

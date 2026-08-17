@@ -13,7 +13,7 @@
       "keys": [
         {
           "label": "Shot",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+shift+4"
@@ -21,7 +21,7 @@
         },
         {
           "label": "Record",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+shift+5"
@@ -29,7 +29,7 @@
         },
         {
           "label": "Spaces",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "ctrl+up"
@@ -37,7 +37,7 @@
         },
         {
           "label": "Prev",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "prev"
@@ -45,7 +45,7 @@
         },
         {
           "label": "Play",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "playpause"
@@ -53,7 +53,7 @@
         },
         {
           "label": "Next",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "next"
@@ -61,7 +61,7 @@
         },
         {
           "label": "Figma",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "app",
             "value": "Figma"
@@ -69,7 +69,7 @@
         },
         {
           "label": "Code",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "app",
             "value": "Visual Studio Code"
@@ -77,7 +77,7 @@
         },
         {
           "label": "Chrome",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "app",
             "value": "Google Chrome"
@@ -85,7 +85,7 @@
         },
         {
           "label": "Term",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "app",
             "value": "Terminal"
@@ -93,7 +93,7 @@
         },
         {
           "label": "Slack",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "app",
             "value": "Slack"
@@ -101,7 +101,7 @@
         },
         {
           "label": "Lock",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "ctrl+cmd+q"
@@ -128,7 +128,7 @@
       "keys": [
         {
           "label": "Move",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "v"
@@ -136,7 +136,7 @@
         },
         {
           "label": "Frame",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "a"
@@ -144,7 +144,7 @@
         },
         {
           "label": "Text",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "t"
@@ -152,7 +152,7 @@
         },
         {
           "label": "Comp",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+opt+k"
@@ -160,7 +160,7 @@
         },
         {
           "label": "Group",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+g"
@@ -168,7 +168,7 @@
         },
         {
           "label": "Auto",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "shift+a"
@@ -176,7 +176,7 @@
         },
         {
           "label": "Fit",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "shift+1"
@@ -184,7 +184,7 @@
         },
         {
           "label": "Zoom",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "shift+2"
@@ -192,7 +192,7 @@
         },
         {
           "label": "UI",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+\\"
@@ -200,7 +200,7 @@
         },
         {
           "label": "Mask",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "ctrl+cmd+m"
@@ -208,7 +208,7 @@
         },
         {
           "label": "Export",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+shift+e"
@@ -216,7 +216,7 @@
         },
         {
           "label": "Note",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "c"
@@ -244,7 +244,7 @@
         null,
         {
           "label": "Files",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+p"
@@ -252,7 +252,7 @@
         },
         {
           "label": "Find",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+shift+f"
@@ -260,7 +260,7 @@
         },
         {
           "label": "Term",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "ctrl+`"
@@ -268,7 +268,7 @@
         },
         {
           "label": "Side",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+b"
@@ -276,7 +276,7 @@
         },
         {
           "label": "Split",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+\\"
@@ -284,7 +284,7 @@
         },
         {
           "label": "Fmt",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "shift+opt+f"
@@ -292,7 +292,7 @@
         },
         {
           "label": "Cmnt",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+/"
@@ -300,7 +300,7 @@
         },
         {
           "label": "Probs",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+shift+m"
@@ -308,7 +308,7 @@
         },
         {
           "label": "Git",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "ctrl+shift+g"
@@ -316,7 +316,7 @@
         },
         {
           "label": "Explr",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+shift+e"
@@ -324,7 +324,7 @@
         },
         {
           "label": "Debug",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "f5"
@@ -351,7 +351,7 @@
       "keys": [
         {
           "label": "NewTab",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+t"
@@ -359,7 +359,7 @@
         },
         {
           "label": "Close",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+w"
@@ -367,7 +367,7 @@
         },
         {
           "label": "Undo",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+shift+t"
@@ -375,7 +375,7 @@
         },
         {
           "label": "Back",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+["
@@ -383,7 +383,7 @@
         },
         {
           "label": "Fwd",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+]"
@@ -391,7 +391,7 @@
         },
         {
           "label": "Reload",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+shift+r"
@@ -399,7 +399,7 @@
         },
         {
           "label": "DevTls",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+opt+i"
@@ -407,7 +407,7 @@
         },
         {
           "label": "Find",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -415,7 +415,7 @@
         },
         {
           "label": "Incog",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+shift+n"
@@ -423,7 +423,7 @@
         },
         {
           "label": "Zoom+",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+="
@@ -431,7 +431,7 @@
         },
         {
           "label": "Zoom-",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+-"
@@ -439,7 +439,7 @@
         },
         {
           "label": "URL",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+l"
@@ -466,7 +466,7 @@
       "keys": [
         {
           "label": "NewTab",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+t"
@@ -474,7 +474,7 @@
         },
         {
           "label": "Close",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+w"
@@ -482,7 +482,7 @@
         },
         {
           "label": "Reopen",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+shift+t"
@@ -490,7 +490,7 @@
         },
         {
           "label": "Back",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+["
@@ -498,7 +498,7 @@
         },
         {
           "label": "Fwd",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+]"
@@ -506,7 +506,7 @@
         },
         {
           "label": "Reload",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+r"
@@ -514,7 +514,7 @@
         },
         {
           "label": "Side",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+s"
@@ -522,7 +522,7 @@
         },
         {
           "label": "Find",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -530,7 +530,7 @@
         },
         {
           "label": "DevTls",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+opt+i"
@@ -538,7 +538,7 @@
         },
         {
           "label": "Pin",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+d"
@@ -546,7 +546,7 @@
         },
         {
           "label": "CopyLk",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+shift+c"
@@ -554,7 +554,7 @@
         },
         {
           "label": "URL",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+l"
@@ -581,7 +581,7 @@
       "keys": [
         {
           "label": "Task",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "text",
             "value": "* "
@@ -589,7 +589,7 @@
         },
         {
           "label": "Check",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "text",
             "value": "+ "
@@ -597,7 +597,7 @@
         },
         {
           "label": "Bullet",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "text",
             "value": "- "
@@ -605,7 +605,7 @@
         },
         {
           "label": "Bold",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+b"
@@ -613,7 +613,7 @@
         },
         {
           "label": "Italic",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+i"
@@ -621,7 +621,7 @@
         },
         {
           "label": "H1",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "text",
             "value": "# "
@@ -629,7 +629,7 @@
         },
         {
           "label": "Today",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+t"
@@ -637,7 +637,7 @@
         },
         {
           "label": "Search",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+shift+f"
@@ -645,7 +645,7 @@
         },
         {
           "label": "New",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+n"
@@ -653,7 +653,7 @@
         },
         {
           "label": "Link",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "text",
             "value": "[["
@@ -661,7 +661,7 @@
         },
         {
           "label": "Quote",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "text",
             "value": "> "
@@ -689,7 +689,7 @@
       "keys": [
         {
           "label": "Star1",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "1"
@@ -697,7 +697,7 @@
         },
         {
           "label": "Star2",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "2"
@@ -705,7 +705,7 @@
         },
         {
           "label": "Star3",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "3"
@@ -713,7 +713,7 @@
         },
         {
           "label": "Star4",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "4"
@@ -721,7 +721,7 @@
         },
         {
           "label": "Star5",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "5"
@@ -729,7 +729,7 @@
         },
         {
           "label": "Prevw",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "space"
@@ -737,7 +737,7 @@
         },
         {
           "label": "Search",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -745,7 +745,7 @@
         },
         {
           "label": "NewFld",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+shift+n"
@@ -753,7 +753,7 @@
         },
         {
           "label": "Info",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+i"
@@ -761,7 +761,7 @@
         },
         {
           "label": "Dup",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+d"
@@ -769,7 +769,7 @@
         },
         {
           "label": "Del",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+delete"
@@ -797,7 +797,7 @@
       "keys": [
         {
           "label": "Day",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+1"
@@ -805,7 +805,7 @@
         },
         {
           "label": "Week",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+2"
@@ -813,7 +813,7 @@
         },
         {
           "label": "Month",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+3"
@@ -821,7 +821,7 @@
         },
         {
           "label": "Prev",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+left"
@@ -829,7 +829,7 @@
         },
         {
           "label": "Today",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+t"
@@ -837,7 +837,7 @@
         },
         {
           "label": "Next",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+right"
@@ -845,7 +845,7 @@
         },
         {
           "label": "New",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+n"
@@ -853,7 +853,7 @@
         },
         {
           "label": "Info",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+i"
@@ -861,7 +861,7 @@
         },
         {
           "label": "Find",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -869,7 +869,7 @@
         },
         {
           "label": "Year",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+4"
@@ -877,7 +877,7 @@
         },
         {
           "label": "Reload",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+r"
@@ -905,7 +905,7 @@
       "keys": [
         {
           "label": "Today",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+1"
@@ -913,7 +913,7 @@
         },
         {
           "label": "Sched",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+2"
@@ -921,7 +921,7 @@
         },
         {
           "label": "All",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+3"
@@ -929,7 +929,7 @@
         },
         {
           "label": "Flags",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+4"
@@ -937,7 +937,7 @@
         },
         {
           "label": "Compl",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+5"
@@ -945,7 +945,7 @@
         },
         {
           "label": "New",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+n"
@@ -953,7 +953,7 @@
         },
         {
           "label": "List",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+shift+n"
@@ -961,7 +961,7 @@
         },
         {
           "label": "Find",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -969,7 +969,7 @@
         },
         {
           "label": "Info",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+i"
@@ -977,7 +977,7 @@
         },
         {
           "label": "Indent",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+]"
@@ -985,7 +985,7 @@
         },
         {
           "label": "Outdnt",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+["
@@ -999,7 +999,7 @@
       "keys": [
         {
           "label": "New",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+n"
@@ -1007,7 +1007,7 @@
         },
         {
           "label": "Send",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+enter"
@@ -1015,7 +1015,7 @@
         },
         {
           "label": "Search",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+k"
@@ -1023,7 +1023,7 @@
         },
         {
           "label": "Newln",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "shift+enter"
@@ -1031,7 +1031,7 @@
         },
         {
           "label": "Code",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "text",
             "value": "```"
@@ -1039,7 +1039,7 @@
         },
         {
           "label": "Stop",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "esc"
@@ -1047,7 +1047,7 @@
         },
         {
           "label": "Copy",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+c"
@@ -1055,7 +1055,7 @@
         },
         {
           "label": "Paste",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+v"
@@ -1063,7 +1063,7 @@
         },
         {
           "label": "Undo",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+z"
@@ -1071,7 +1071,7 @@
         },
         {
           "label": "Prefs",
-          "color": "#4A4A4A",
+          "color": "#949494",
           "action": {
             "type": "keys",
             "value": "cmd+,"
@@ -1100,7 +1100,7 @@
       "keys": [
         {
           "label": "Search",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+f"
@@ -1108,7 +1108,7 @@
         },
         {
           "label": "Copy",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+c"
@@ -1116,7 +1116,7 @@
         },
         {
           "label": "Paste",
-          "color": "#3E8E9B",
+          "color": "#00E5FF",
           "action": {
             "type": "keys",
             "value": "cmd+v"
@@ -1124,7 +1124,7 @@
         },
         {
           "label": "Undo",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+z"
@@ -1132,7 +1132,7 @@
         },
         {
           "label": "Redo",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+shift+z"
@@ -1140,7 +1140,7 @@
         },
         {
           "label": "SelAll",
-          "color": "#C4703F",
+          "color": "#FF7A00",
           "action": {
             "type": "keys",
             "value": "cmd+a"
@@ -1148,7 +1148,7 @@
         },
         {
           "label": "Prefs",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+,"
@@ -1156,7 +1156,7 @@
         },
         {
           "label": "Reload",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+r"
@@ -1164,7 +1164,7 @@
         },
         {
           "label": "Close",
-          "color": "#7C9A72",
+          "color": "#16FF62",
           "action": {
             "type": "keys",
             "value": "cmd+w"
