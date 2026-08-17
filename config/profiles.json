@@ -1188,6 +1188,327 @@
           "value": "cmd+f"
         }
       }
+    },
+    "com.microsoft.teams2": {
+      "name": "Teams",
+      "keys": [
+        {
+          "label": "Mute",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+m"
+          }
+        },
+        {
+          "label": "Camera",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+o"
+          }
+        },
+        {
+          "label": "Hand",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+k"
+          }
+        },
+        {
+          "label": "Accept",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+a"
+          }
+        },
+        {
+          "label": "Reject",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+d"
+          }
+        },
+        {
+          "label": "Leave",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+h"
+          }
+        },
+        {
+          "label": "Chat",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+2"
+          }
+        },
+        {
+          "label": "Calend",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+4"
+          }
+        },
+        {
+          "label": "Calls",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+5"
+          }
+        },
+        {
+          "label": "NewCht",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "NewMtg",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+n"
+          }
+        },
+        {
+          "label": "Prefs",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+,"
+          }
+        }
+      ],
+      "encoder": {
+        "press": {
+          "type": "keys",
+          "value": "cmd+shift+m"
+        }
+      }
+    },
+    "com.microsoft.teams": {
+      "name": "Teams",
+      "keys": [
+        {
+          "label": "Mute",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+m"
+          }
+        },
+        {
+          "label": "Camera",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+o"
+          }
+        },
+        {
+          "label": "Hand",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+k"
+          }
+        },
+        {
+          "label": "Accept",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+a"
+          }
+        },
+        {
+          "label": "Reject",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+d"
+          }
+        },
+        {
+          "label": "Leave",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+h"
+          }
+        },
+        {
+          "label": "Chat",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+2"
+          }
+        },
+        {
+          "label": "Calend",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+4"
+          }
+        },
+        {
+          "label": "Calls",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+5"
+          }
+        },
+        {
+          "label": "NewCht",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "NewMtg",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+n"
+          }
+        },
+        {
+          "label": "Prefs",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+,"
+          }
+        }
+      ],
+      "encoder": {
+        "press": {
+          "type": "keys",
+          "value": "cmd+shift+m"
+        }
+      }
+    },
+    "us.zoom.xos": {
+      "name": "Zoom",
+      "keys": [
+        {
+          "label": "Mute",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+a"
+          }
+        },
+        {
+          "label": "Video",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+v"
+          }
+        },
+        {
+          "label": "Hand",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "opt+y"
+          }
+        },
+        {
+          "label": "Share",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+s"
+          }
+        },
+        {
+          "label": "Pause",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+t"
+          }
+        },
+        {
+          "label": "Record",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+r"
+          }
+        },
+        {
+          "label": "Chat",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+h"
+          }
+        },
+        {
+          "label": "People",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+u"
+          }
+        },
+        {
+          "label": "View",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+w"
+          }
+        },
+        {
+          "label": "Invite",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "Full",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+shift+f"
+          }
+        },
+        {
+          "label": "Leave",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+w"
+          }
+        }
+      ],
+      "encoder": {
+        "press": {
+          "type": "keys",
+          "value": "cmd+shift+a"
+        }
+      }
     }
   }
 }
