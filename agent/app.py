@@ -68,13 +68,15 @@ def accessibility_granted() -> bool:
     """Without this, pynput silently does nothing — no exception, no error.
 
     Reachable because pynput pulls in the Quartz wrapper. Guarded anyway:
-    failing to answer is not a reason to refuse to start.
+    failing to answer is not a reason to refuse to start, and this runs
+    inside menuWillOpen_ — an uncaught error here would break the whole
+    menu, not just this one item.
     """
     try:
         from ApplicationServices import AXIsProcessTrusted
-    except ImportError:
+        return bool(AXIsProcessTrusted())
+    except Exception:
         return True
-    return bool(AXIsProcessTrusted())
 
 
 def _open(*args):
