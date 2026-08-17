@@ -87,6 +87,9 @@ whichever way you edit it.
 
 ### 4. Run at login (optional)
 
+Either build the app (below), which has a **Start at Login** toggle, or wire up
+launchd by hand:
+
 ```bash
 cp launchd/com.iansoper.macropad.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.iansoper.macropad.plist
@@ -94,6 +97,40 @@ launchctl load ~/Library/LaunchAgents/com.iansoper.macropad.plist
 
 Edit the paths in the plist first. Grant Accessibility to the Python binary
 itself when running under launchd, not to Terminal.
+
+## MacroPad.app
+
+The same agent and the same editor, wrapped in a menu bar app — no terminal, a
+visible connection status, and one stable thing to grant Accessibility to
+instead of whichever Python your venv happens to hold.
+
+```bash
+make dev          # installs py2app alongside the test deps
+make app          # build and sign dist/MacroPad.app
+make app-install  # copy it to /Applications
+```
+
+Launch it and a small grid appears in the menu bar. The menu shows which port
+the pad is on, the frontmost app and the profile it resolved to, and warns when
+Accessibility is missing. **Start at Login** writes the LaunchAgent for you, so
+there are no paths to hand-edit.
+
+`make app-dev` builds in alias mode instead: the bundle points at this checkout
+rather than copying it, so edits are live and a rebuild takes seconds. Use it
+while working on the app, and `make app` for the real thing.
+
+**Where your config lives changes when you run the app.** From source it stays
+`config/profiles.json`. Installed, the app copies that file once to
+`~/Library/Application Support/MacroPad/profiles.json` and edits it there —
+`Contents/Resources` is read-only, and the editor writes to this file. Existing
+configs are never overwritten by a reinstall. **Reveal profiles.json** in the
+menu opens whichever one is live. Logs go to `~/Library/Logs/MacroPad/`.
+
+One wrinkle worth knowing: the app is ad-hoc signed, and an ad-hoc signature
+changes on every build, so macOS may drop the Accessibility grant each time you
+rebuild. If that gets tiresome, make a self-signed **Code Signing** certificate
+in Keychain Access and build with `make app SIGN_IDENTITY="Your Cert Name"` —
+a stable identity keeps the grant.
 
 ## Editor
 
@@ -119,11 +156,14 @@ one; **Reset to default** puts it back.
 **Learn mode** is the reason to use the editor over the JSON: click **Learn**
 and press the actual shortcut instead of typing `cmd+shift+opt+e` into a field.
 
-One real limitation — the browser claims a handful of combos before any page
-sees them, so **`cmd+w`, `cmd+t`, `cmd+q`, and `cmd+n` cannot be captured by
-Learn mode**. Type those into the field by hand; they work fine on the pad,
-they just can't be recorded through a browser. A native app wouldn't have this
-problem, which is the strongest argument for eventually building one.
+One real limitation, **in a browser**: it claims a handful of combos before any
+page sees them, so `cmd+w`, `cmd+t`, `cmd+q`, and `cmd+n` cannot be captured by
+Learn mode there. Type those into the field by hand; they work fine on the pad,
+they just can't be recorded through a browser tab.
+
+Opening the editor from **MacroPad.app** should lift that: a menu bar app
+installs no default main menu, so nothing claims those key equivalents and
+WebKit hands them to the page. That is also why Quit in the menu has no ⌘Q.
 
 ### Notes
 
@@ -194,26 +234,27 @@ The encoder takes `cw`, `ccw`, and `press`, each a normal action object.
 
 ## Going native
 
-The localhost editor covers the mapping problem, but it's a browser tab, not an
-app — no dock icon, no menu bar, and Learn mode is stuck with whatever
-shortcuts the browser is willing to pass through. Two ways to fix that, if it
-ever becomes worth the effort:
+Mostly done, and more cheaply than expected. `MacroPad.app` above is the Python
+agent frozen with py2app behind an `NSStatusItem`, with the editor in a
+`WKWebView`. No rewrite, one added dependency, and the schema and `/api` shape
+never moved. The two rewrites below stay on the table but are no longer the
+only way to get an app:
 
 **Tauri + Svelte (a week or two).** Real `.app`, tray icon, launches at login.
 The editor's markup ports over more or less directly. You'd move the serial
 loop into Rust (`serialport`), keystroke synthesis to `enigo`, and
 frontmost-app detection to `objc2-app-kit`.
 
-**SwiftUI menu bar app (a week or two, steeper ramp).** The most native result.
-`NSWorkspace`, `CGEventPost`, and POSIX serial are all first-class, so the agent
-collapses into the app with no Python runtime to ship. A global event tap also
-means Learn mode could capture `cmd+w` and friends, which the browser can't.
-Worth it if this ever becomes a thing you distribute.
+**SwiftUI menu bar app (a week or two, steeper ramp).** The most native result,
+and the one thing it still buys over the current app is size: no Python runtime
+to ship, so ~40 MB becomes a couple. `NSWorkspace`, `CGEventPost`, and POSIX
+serial are all first-class. Worth it if this ever becomes a thing you
+distribute.
 
-Either way the JSON schema and `/api` shape stay as they are, so the two can
-coexist during a port rather than requiring a big-bang switch.
+Either way the JSON schema and `/api` shape stay as they are, so a port can
+coexist with what's here rather than requiring a big-bang switch.
 
-Still worth building whenever the native app happens:
+Still worth building:
 
 - **Learn mode from the pad itself.** Press a pad key to select the slot rather
   than clicking it, so your hands never leave the hardware.
