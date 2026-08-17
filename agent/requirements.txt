@@ -1,3 +1,7 @@
 pyserial>=3.5
 pynput>=1.7.6
 pyobjc-framework-Cocoa>=10.0
+# WKWebView only. Cocoa wraps CoreFoundation/Foundation/AppKit and stops
+# there, so the editor window needs this; nothing else does. Drop it and the
+# app still runs — "Open Editor in Browser" is the fallback path.
+pyobjc-framework-WebKit>=10.0

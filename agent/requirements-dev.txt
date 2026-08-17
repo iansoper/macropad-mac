@@ -3,3 +3,9 @@
 # Only needed to run the test suite. The server tests are stdlib-only and
 # run anywhere; the agent loop itself still needs a Mac and real hardware.
 pytest>=8.0
+
+# Only needed to build MacroPad.app. py2app rather than PyInstaller because
+# it is by the pyobjc author and understands the framework wrappers, which
+# this app is almost entirely made of.
+py2app>=0.28
+
