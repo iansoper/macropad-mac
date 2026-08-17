@@ -18,7 +18,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-UI_DIR = Path(__file__).resolve().parent / "ui"
+import paths
+
 DEFAULT_PORT = int(os.environ.get("MACROPAD_UI_PORT", "8765"))
 MAX_BODY = 1 << 20  # 1 MiB is far more than any plausible profiles.json
 
@@ -111,10 +112,14 @@ def make_handler(config_path: Path, state: State):
             route = self.path.split("?")[0]
 
             if route in ("/", "/index.html"):
+                # Asked per request rather than cached at import: frozen, this
+                # depends on RESOURCEPATH, which is only in the environment
+                # once the bundle has actually launched.
+                ui_dir = paths.ui_dir()
                 try:
-                    body = (UI_DIR / "index.html").read_bytes()
+                    body = (ui_dir / "index.html").read_bytes()
                 except FileNotFoundError:
-                    self._json(500, {"error": f"UI missing at {UI_DIR}"})
+                    self._json(500, {"error": f"UI missing at {ui_dir}"})
                     return
                 self._send(200, body, "text/html; charset=utf-8")
 
@@ -220,9 +225,14 @@ def validate_config(data) -> str | None:
 
 
 def serve(config_path: Path, state: State, port: int = DEFAULT_PORT):
-    """Start the editor on a daemon thread. Returns the bound port."""
+    """Start the editor on a daemon thread. Returns the server.
+
+    Returns the ThreadingHTTPServer rather than just the port so a caller
+    with a Quit menu item can shut it down; read `.server_address[1]` for
+    the bound port, which is what you want when port=0.
+    """
     httpd = ThreadingHTTPServer(("127.0.0.1", port), make_handler(config_path, state))
     httpd.daemon_threads = True
     thread = threading.Thread(target=httpd.serve_forever, daemon=True, name="macropad-ui")
     thread.start()
-    return httpd.server_address[1]
+    return httpd
