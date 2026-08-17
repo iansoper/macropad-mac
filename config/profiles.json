@@ -993,6 +993,107 @@
         },
         null
       ]
+    },
+    "com.anthropic.claudefordesktop": {
+      "name": "Claude",
+      "keys": [
+        {
+          "label": "New",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+n"
+          }
+        },
+        {
+          "label": "Send",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+enter"
+          }
+        },
+        {
+          "label": "Search",
+          "color": "#3E8E9B",
+          "action": {
+            "type": "keys",
+            "value": "cmd+k"
+          }
+        },
+        {
+          "label": "Newln",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "shift+enter"
+          }
+        },
+        {
+          "label": "Code",
+          "color": "#C4703F",
+          "action": {
+            "type": "text",
+            "value": "```"
+          }
+        },
+        {
+          "label": "Stop",
+          "color": "#C4703F",
+          "action": {
+            "type": "keys",
+            "value": "esc"
+          }
+        },
+        {
+          "label": "Copy",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+c"
+          }
+        },
+        {
+          "label": "Paste",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+v"
+          }
+        },
+        {
+          "label": "Undo",
+          "color": "#7C9A72",
+          "action": {
+            "type": "keys",
+            "value": "cmd+z"
+          }
+        },
+        {
+          "label": "Prefs",
+          "color": "#4A4A4A",
+          "action": {
+            "type": "keys",
+            "value": "cmd+,"
+          }
+        },
+        null,
+        null
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+="
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+-"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+k"
+        }
+      }
     }
   }
 }
