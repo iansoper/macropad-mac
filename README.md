@@ -153,6 +153,14 @@ which makes fall-through visible instead of something you infer from `null`s.
 **Override here** gives that slot its own binding, seeded from the inherited
 one; **Reset to default** puts it back.
 
+Selecting an app shows its icon and name in a header above the grid. The
+bundle ID underneath is an editable field — change it and the profile is
+renamed (its key in `profiles.json`) once you Save. **Delete app** on that
+same header removes the profile entirely; the `global` default can't be
+renamed or deleted from the UI. **Edit JSON** opens the raw profile (bundle
+ID included, for apps other than `global`) or the whole config for full
+manual control.
+
 **Learn mode** is the reason to use the editor over the JSON: click **Learn**
 and press the actual shortcut instead of typing `cmd+shift+opt+e` into a field.
 
