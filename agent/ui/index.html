@@ -875,6 +875,40 @@ function openJsonModal(mode) {
   text.focus();
 }
 
+/** Same shallow shape checks as the server's validate_config, but for one
+ *  profile object, so a bad paste is caught immediately instead of silently
+ *  wiping the profile (still passes validate_config since missing keys just
+ *  default to empty). */
+function profileShapeProblem(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    return "Expected a JSON object for the app profile";
+  }
+  if (obj.profiles && typeof obj.profiles === "object" && !Array.isArray(obj.profiles)) {
+    return 'That looks like a full config document. Use "Paste JSON" in the Profiles panel instead.';
+  }
+  if (!("keys" in obj) && !("encoder" in obj) && !("name" in obj)) {
+    const values = Object.values(obj);
+    if (values.length === 1 && values[0] && typeof values[0] === "object" &&
+        !Array.isArray(values[0]) && "keys" in values[0]) {
+      return "That looks like a profile wrapped in its bundle ID. Paste just the { name, keys, encoder } object.";
+    }
+  }
+  if ("keys" in obj) {
+    if (!Array.isArray(obj.keys)) return "keys must be a list";
+    if (obj.keys.length > 12) return `${obj.keys.length} keys, the pad has 12`;
+    for (let i = 0; i < obj.keys.length; i++) {
+      const k = obj.keys[i];
+      if (k !== null && (typeof k !== "object" || Array.isArray(k))) {
+        return `key ${i}: must be an object or null`;
+      }
+    }
+  }
+  if ("encoder" in obj && (typeof obj.encoder !== "object" || Array.isArray(obj.encoder))) {
+    return "encoder must be an object";
+  }
+  return null;
+}
+
 function applyJsonModal() {
   let parsed;
   try {
@@ -895,8 +929,9 @@ function applyJsonModal() {
       selectedProfile = defaultProfileKey();
     }
   } else {
-    if (!isObject) {
-      toast("Expected a JSON object for the app profile", true);
+    const problem = profileShapeProblem(parsed);
+    if (problem) {
+      toast(problem, true);
       return;
     }
     config.profiles[selectedProfile] = parsed;
