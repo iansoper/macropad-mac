@@ -1,15 +1,14 @@
 """
 app_icons.py — fetches macOS application icons via NSWorkspace.
 
-Two consumers, two sizes: `ui_png` renders a full-colour icon for the editor
-(the profile list and the "add app" picker), `pad_bitmap` renders an 8x8
-monochrome silhouette for the pad's OLED header, packed by icon_bitmap.py.
+`ui_png` renders a full-colour icon for the editor (the profile list and the
+"add app" picker) — the only consumer; the pad's OLED shows no app icon.
 
 Same threading rule as frontmost_bundle_id() and running_apps() in
-macropad_agent.py: NSWorkspace belongs to the main loop. Both functions here
-are called from Runtime.tick(), never from an HTTP handler thread — the
-results are cached into server.IconStore, which the HTTP threads read
-without touching AppKit at all.
+macropad_agent.py: NSWorkspace belongs to the main loop. It is called from
+Runtime.tick(), never from an HTTP handler thread — the results are cached
+into server.IconStore, which the HTTP threads read without touching AppKit
+at all.
 """
 
 from AppKit import (
@@ -19,8 +18,6 @@ from AppKit import (
     NSWorkspace,
 )
 from Foundation import NSMakeRect
-
-import icon_bitmap
 
 # NSCompositingOperationCopy. Hardcoded for the same reason icon.py hardcodes
 # its PNG file-type constant: the symbolic name has moved around between
@@ -65,33 +62,3 @@ def ui_png(bundle_id: str, size: int = UI_ICON_SIZE) -> bytes | None:
     image = NSWorkspace.sharedWorkspace().iconForFile_(path)
     rep = _bitmap_rep(image, size)
     return bytes(rep.representationUsingType_properties_(_PNG, {}))
-
-
-def pad_bitmap(bundle_id: str) -> bytes | None:
-    """8-byte, 1-bit-per-pixel silhouette for the pad's OLED header."""
-    path = _app_path(bundle_id)
-    if not path:
-        return None
-    image = NSWorkspace.sharedWorkspace().iconForFile_(path)
-    size = icon_bitmap.ICON_SIZE
-    rep = _bitmap_rep(image, size)
-
-    pixels = []
-    for y in range(size):
-        for x in range(size):
-            # Assumed top-left origin for colorAtX:y: (unlike the bottom-up
-            # NSView space icon.py has to flip against). Unverified against
-            # real hardware — if pad icons render upside down, flip this to
-            # rep.colorAtX_y_(x, size - 1 - y).
-            color = rep.colorAtX_y_(x, y)
-            if color is None:
-                pixels.append((255, 0))
-                continue
-            luma = (
-                0.299 * color.redComponent()
-                + 0.587 * color.greenComponent()
-                + 0.114 * color.blueComponent()
-            ) * 255.0
-            alpha = color.alphaComponent() * 255.0
-            pixels.append((luma, alpha))
-    return icon_bitmap.pack(pixels)

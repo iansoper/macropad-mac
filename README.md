@@ -216,11 +216,9 @@ Keys are indexed 0–11, row-major, top-left first (3 wide × 4 tall).
 
 Labels are truncated to 6 characters on the 128×64 OLED. Keep them short.
 
-The header also carries a small icon for the app when one is available — an
-8x8 1-bit silhouette from `NSWorkspace`, not a full-color portrait; the OLED
-has no room for more. It shows up automatically once the agent has looked
-the app's icon up, with no config to set. The same icons, at full color and
-a usable size, appear in the editor's profile list and "Add app" picker.
+The pad's OLED header shows only the app name — no icon; there's no room on
+a 1-bit display for one. `NSWorkspace` app icons, at full color and a usable
+size, appear instead in the editor's profile list and "Add app" picker.
 
 | Action type   | Value                  | Notes                             |
 | ------------- | ---------------------- | --------------------------------- |
