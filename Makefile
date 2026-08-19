@@ -64,10 +64,24 @@ libs-reset:           ## wipe lib/ and reinstall — use after a CircuitPython m
 	rm -rf $(MACROPAD)/lib
 	$(CIRCUP) --path $(MACROPAD) install $(LIBS)
 
-deploy:               ## copy firmware to the pad
+deploy:               ## copy firmware to the pad, only touching files that changed
 	$(require_pad)
-	cp firmware/boot.py firmware/code.py $(MACROPAD)/
-	@echo "Copied. If boot.py changed, UNPLUG AND REPLUG the pad."
+	@boot_changed=0; any_changed=0; \
+	for f in boot.py code.py; do \
+		if ! cmp -s firmware/$$f $(MACROPAD)/$$f 2>/dev/null; then \
+			cp firmware/$$f $(MACROPAD)/$$f; \
+			echo "Copied $$f."; \
+			any_changed=1; \
+			test $$f = boot.py && boot_changed=1; \
+		fi; \
+	done; \
+	if test $$boot_changed = 1; then \
+		echo "boot.py changed — UNPLUG AND REPLUG the pad."; \
+	elif test $$any_changed = 1; then \
+		echo "code.py updated — no replug needed."; \
+	else \
+		echo "Nothing changed."; \
+	fi
 
 run:                  ## run the agent (serves the editor too)
 	$(PY) agent/macropad_agent.py
