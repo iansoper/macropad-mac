@@ -96,9 +96,10 @@ def api(tmp_path):
     config_path.write_text(json.dumps(VALID))
     state = server.State()
     state.update(connected=True, appName="Figma", bundleId="com.figma.Desktop")
+    icons = server.IconStore()
 
     httpd = ThreadingHTTPServer(
-        ("127.0.0.1", 0), server.make_handler(config_path, state))
+        ("127.0.0.1", 0), server.make_handler(config_path, state, icons))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{httpd.server_address[1]}"
 
@@ -126,6 +127,7 @@ def api(tmp_path):
     request.config_path = config_path
     request.base = base
     request.raw = raw
+    request.icons = icons
     yield request
     httpd.shutdown()
 
@@ -201,3 +203,43 @@ def test_serves_the_ui(api):
         assert res.status == 200
         assert res.headers["Content-Type"].startswith("text/html")
         assert b"MacroPad" in res.read()
+
+
+# --------------------------------------------------------------- icons --
+
+def test_icon_store_returns_none_for_unknown_bundle():
+    store = server.IconStore()
+    assert store.get("com.example.App") is None
+
+
+def test_icon_store_roundtrips_bytes():
+    store = server.IconStore()
+    store.set("com.example.App", b"\x89PNG...")
+    assert store.get("com.example.App") == b"\x89PNG..."
+
+
+def test_get_icon_404s_when_not_yet_cached(api):
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(api.base + "/api/icon/com.example.App")
+    assert exc_info.value.code == 404
+
+
+def test_get_icon_serves_cached_png(api):
+    api.icons.set("com.figma.Desktop", b"\x89PNG-bytes")
+    with urllib.request.urlopen(api.base + "/api/icon/com.figma.Desktop") as res:
+        assert res.status == 200
+        assert res.headers["Content-Type"] == "image/png"
+        assert res.read() == b"\x89PNG-bytes"
+
+
+def test_get_icon_without_a_store_404s():
+    """make_handler's icon_store defaults to None — must not crash the route."""
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), server.make_handler(Path("x"), server.State()))
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{httpd.server_address[1]}"
+    try:
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            urllib.request.urlopen(base + "/api/icon/com.example.App")
+        assert exc_info.value.code == 404
+    finally:
+        httpd.shutdown()

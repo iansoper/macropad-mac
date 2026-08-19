@@ -125,6 +125,11 @@
     border-color: var(--line); font-weight: 560;
   }
   .profile .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-icon {
+    width: 18px; height: 18px; border-radius: 4px; flex: none;
+    background: var(--panel-2);
+  }
+  .app-row .app-icon { width: 22px; height: 22px; margin-right: 8px; }
   .profile .live-tag {
     font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--green); font-weight: 620;
@@ -254,9 +259,10 @@
   #json-modal-text { min-height: 320px; font-family: var(--mono); font-size: 12px; white-space: pre; }
   .app-list { max-height: 300px; overflow-y: auto; margin: 12px -6px 0; }
   .app-row {
-    display: block; width: 100%; text-align: left;
+    display: flex; align-items: center; width: 100%; text-align: left;
     padding: 7px 10px; border: none; border-radius: 7px; background: none;
   }
+  .app-row-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .app-row:hover { background: var(--panel-2); }
   .app-row .b { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
 
@@ -361,6 +367,24 @@ let liveBundle = null;   // frontmost app, for the LIVE tag
 
 const $ = (id) => document.getElementById(id);
 
+/** An <img> for a bundle ID's app icon, or null when there's no bundle ID at all.
+ *
+ * The agent only ever populates /api/icon lazily from its own main loop
+ * (NSWorkspace can't be touched from an HTTP thread — see server.py), so a
+ * freshly-added profile 404s here until the next poll. Hiding the element on
+ * error rather than showing a broken-image glyph is the whole handling: the
+ * next renderProfiles() picks it up once the agent has caught up.
+ */
+function appIcon(bundleId) {
+  if (!bundleId) return null;
+  const img = document.createElement("img");
+  img.className = "app-icon";
+  img.alt = "";
+  img.src = "/api/icon/" + encodeURIComponent(bundleId);
+  img.onerror = () => { img.style.display = "none"; };
+  return img;
+}
+
 // ------------------------------------------------------------- helpers --
 function defaultProfileKey() {
   return (config && config.defaultProfile) || "global";
@@ -425,6 +449,10 @@ function renderProfiles() {
   for (const key of keys) {
     const btn = document.createElement("button");
     btn.className = "profile" + (key === selectedProfile ? " active" : "");
+    if (!isDefaultProfile(key)) {
+      const icon = appIcon(key);
+      if (icon) btn.appendChild(icon);
+    }
     const name = document.createElement("span");
     name.className = "name";
     name.textContent = profile(key).name || key;
@@ -846,7 +874,12 @@ function openAppModal() {
     for (const app of apps) {
       const b = document.createElement("button");
       b.className = "app-row";
-      b.innerHTML = `<div>${escapeHtml(app.name)}</div><div class="b">${escapeHtml(app.bundleId)}</div>`;
+      const icon = appIcon(app.bundleId);
+      if (icon) b.appendChild(icon);
+      const text = document.createElement("div");
+      text.className = "app-row-text";
+      text.innerHTML = `<div>${escapeHtml(app.name)}</div><div class="b">${escapeHtml(app.bundleId)}</div>`;
+      b.appendChild(text);
       b.onclick = () => addProfile(app.bundleId, app.name);
       list.appendChild(b);
     }

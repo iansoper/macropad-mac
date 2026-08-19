@@ -55,6 +55,28 @@ class State:
             return dict(self._data)
 
 
+class IconStore:
+    """Bundle ID -> PNG bytes, populated by the main loop, read by HTTP threads.
+
+    NSWorkspace icon lookups need AppKit, which — like State above — must
+    stay off the HTTP handler threads. This is just the bytes side of that
+    split: macropad_agent.py's app_icons module does the AppKit part on the
+    main loop and calls set(); the handler below only ever calls get().
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._data = {}
+
+    def set(self, bundle_id: str, png_bytes: bytes) -> None:
+        with self._lock:
+            self._data[bundle_id] = png_bytes
+
+    def get(self, bundle_id: str):
+        with self._lock:
+            return self._data.get(bundle_id)
+
+
 def write_config_atomically(path: Path, text: str) -> None:
     """Write via a temp file in the same directory, then rename.
 
@@ -86,7 +108,7 @@ NAMED_KEYS = [
 ] + [f"f{n}" for n in range(1, 21)]
 
 
-def make_handler(config_path: Path, state: State):
+def make_handler(config_path: Path, state: State, icon_store: IconStore | None = None):
     class Handler(BaseHTTPRequestHandler):
         # BaseHTTPRequestHandler logs every request to stderr, which would
         # bury the agent's own output once the UI starts polling.
@@ -94,13 +116,18 @@ def make_handler(config_path: Path, state: State):
             pass
 
         # -- helpers ----------------------------------------------------
-        def _send(self, code, body: bytes, content_type: str):
+        def _send(self, code, body: bytes, content_type: str, cache_seconds: int = 0):
             self.send_response(code)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
             # The UI is same-origin; no CORS header on purpose, so a random
-            # page in another tab can't script this API.
-            self.send_header("Cache-Control", "no-store")
+            # page in another tab can't script this API. Icons are the one
+            # response worth letting the browser cache — an app's icon does
+            # not change between polls, and the cache key already includes
+            # the bundle ID.
+            self.send_header(
+                "Cache-Control",
+                f"private, max-age={cache_seconds}" if cache_seconds else "no-store")
             self.end_headers()
             self.wfile.write(body)
 
@@ -138,6 +165,14 @@ def make_handler(config_path: Path, state: State):
                     "namedKeys": NAMED_KEYS,
                     "configPath": str(config_path),
                 })
+
+            elif route.startswith("/api/icon/"):
+                bundle_id = route[len("/api/icon/"):]
+                png = icon_store.get(bundle_id) if icon_store and bundle_id else None
+                if png is None:
+                    self._json(404, {"error": "no icon cached for this bundle ID yet"})
+                else:
+                    self._send(200, png, "image/png", cache_seconds=3600)
 
             else:
                 self._json(404, {"error": "not found"})
@@ -224,14 +259,16 @@ def validate_config(data) -> str | None:
     return None
 
 
-def serve(config_path: Path, state: State, port: int = DEFAULT_PORT):
+def serve(config_path: Path, state: State, icon_store: IconStore | None = None,
+          port: int = DEFAULT_PORT):
     """Start the editor on a daemon thread. Returns the server.
 
     Returns the ThreadingHTTPServer rather than just the port so a caller
     with a Quit menu item can shut it down; read `.server_address[1]` for
     the bound port, which is what you want when port=0.
     """
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), make_handler(config_path, state))
+    httpd = ThreadingHTTPServer(
+        ("127.0.0.1", port), make_handler(config_path, state, icon_store))
     httpd.daemon_threads = True
     thread = threading.Thread(target=httpd.serve_forever, daemon=True, name="macropad-ui")
     thread.start()

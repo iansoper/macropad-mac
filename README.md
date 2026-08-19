@@ -216,6 +216,12 @@ Keys are indexed 0–11, row-major, top-left first (3 wide × 4 tall).
 
 Labels are truncated to 6 characters on the 128×64 OLED. Keep them short.
 
+The header also carries a small icon for the app when one is available — an
+8x8 1-bit silhouette from `NSWorkspace`, not a full-color portrait; the OLED
+has no room for more. It shows up automatically once the agent has looked
+the app's icon up, with no config to set. The same icons, at full color and
+a usable size, appear in the editor's profile list and "Add app" picker.
+
 | Action type   | Value                  | Notes                             |
 | ------------- | ---------------------- | --------------------------------- |
 | `keys`        | `cmd+shift+4`          | Modifiers: cmd, opt, ctrl, shift  |
@@ -258,8 +264,6 @@ Still worth building:
 
 - **Learn mode from the pad itself.** Press a pad key to select the slot rather
   than clicking it, so your hands never leave the hardware.
-- **App icons in the profile list.** `NSWorkspace` already has them, and a list
-  of bundle IDs is harder to scan than a list of icons.
 
 ## Off-the-shelf alternative
 

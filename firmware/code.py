@@ -18,8 +18,16 @@ Protocol: newline-delimited JSON over usb_cdc.data.
   host -> device
     {"t":"layer","name":"Figma",
      "labels":["Move","Frame", ... 12 items ...],
-     "colors":[4098459, 0, ... 12 ints ...]}   0xRRGGBB, 0 = off
+     "colors":[4098459, 0, ... 12 ints ...],   0xRRGGBB, 0 = off
+     "icon":[0,60,66,129, ... 8 ints ...]}     optional, see below
     {"t":"ping"}                         keepalive
+
+"icon", when present, is 8 bytes — one per row, top to bottom, MSB = leftmost
+pixel — an 8x8 1-bit silhouette of the app's icon drawn in the header next to
+the name. There is no room on a 128x64 1-bit display for a real icon; this is
+a recognisable mark, not a portrait. Omit the field (or send an empty/falsy
+value) for a layer with no icon, which keeps today's centered header exactly
+as it was.
 
 If the host goes quiet for HOST_TIMEOUT seconds the pad falls back to a local
 volume knob so it is never completely dead.
@@ -69,6 +77,20 @@ for i in range(12):
     group.append(lbl)
 
 group.append(Rect(0, 0, macropad.display.width, 12, fill=0xFFFFFF))
+
+# The header icon: an 8x8 1-bit silhouette, index 0 = background (invisible
+# against the white header bar), index 1 = ink (matches the title's black).
+# Sized and positioned to sit inside the 12px header with equal top/bottom
+# margin. Left blank (all index 0) when the current layer has no icon.
+ICON_SIZE = 8
+ICON_X = 2
+ICON_Y = 2
+icon_palette = displayio.Palette(2)
+icon_palette[0] = 0xFFFFFF
+icon_palette[1] = 0x000000
+icon_bitmap = displayio.Bitmap(ICON_SIZE, ICON_SIZE, 2)
+group.append(displayio.TileGrid(icon_bitmap, pixel_shader=icon_palette, x=ICON_X, y=ICON_Y))
+
 title = label.Label(
     terminalio.FONT,
     text="",
@@ -80,9 +102,28 @@ group.append(title)
 
 macropad.display.root_group = group
 
+TITLE_CENTER = (macropad.display.width // 2, -2)
+TITLE_LEFT_OF_ICON = (ICON_X + ICON_SIZE + 4, -2)
 
-def render(name, labels, colors):
-    title.text = name[:20]
+
+def set_icon(bits):
+    """Unpack up to 8 row bytes into icon_bitmap; blank (all zero) if bits is falsy."""
+    for y in range(ICON_SIZE):
+        row = bits[y] if bits and y < len(bits) else 0
+        for x in range(ICON_SIZE):
+            icon_bitmap[x, y] = 1 if (row >> (7 - x)) & 1 else 0
+
+
+def render(name, labels, colors, icon=None):
+    set_icon(icon)
+    if icon:
+        title.anchor_point = (0.0, 0.0)
+        title.anchored_position = TITLE_LEFT_OF_ICON
+        title.text = name[:16]
+    else:
+        title.anchor_point = (0.5, 0.0)
+        title.anchored_position = TITLE_CENTER
+        title.text = name[:20]
     for i in range(12):
         key_labels[i].text = (labels[i] or "")[:6] if i < len(labels) else ""
         macropad.pixels[i] = colors[i] if i < len(colors) else 0
@@ -137,6 +178,7 @@ def handle(line):
             msg.get("name", ""),
             msg.get("labels", []),
             msg.get("colors", []),
+            msg.get("icon"),
         )
 
 
