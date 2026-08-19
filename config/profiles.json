@@ -1509,6 +1509,121 @@
           "value": "cmd+shift+a"
         }
       }
+    },
+    "com.apple.Music": {
+      "name": "Music",
+      "keys": [
+        {
+          "label": "Prev",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+left"
+          }
+        },
+        {
+          "label": "Play",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "space"
+          }
+        },
+        {
+          "label": "Next",
+          "color": "#00E5FF",
+          "action": {
+            "type": "keys",
+            "value": "cmd+right"
+          }
+        },
+        {
+          "label": "VolUp",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+up"
+          }
+        },
+        {
+          "label": "VolDwn",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+down"
+          }
+        },
+        {
+          "label": "Mute",
+          "color": "#FF7A00",
+          "action": {
+            "type": "keys",
+            "value": "cmd+opt+down"
+          }
+        },
+        {
+          "label": "Shuf",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+s"
+          }
+        },
+        {
+          "label": "Repeat",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+r"
+          }
+        },
+        {
+          "label": "Search",
+          "color": "#16FF62",
+          "action": {
+            "type": "keys",
+            "value": "cmd+f"
+          }
+        },
+        {
+          "label": "UpNext",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+u"
+          }
+        },
+        {
+          "label": "Info",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+i"
+          }
+        },
+        {
+          "label": "MiniPl",
+          "color": "#949494",
+          "action": {
+            "type": "keys",
+            "value": "cmd+0"
+          }
+        }
+      ],
+      "encoder": {
+        "cw": {
+          "type": "keys",
+          "value": "cmd+up"
+        },
+        "ccw": {
+          "type": "keys",
+          "value": "cmd+down"
+        },
+        "press": {
+          "type": "keys",
+          "value": "cmd+opt+down"
+        }
+      }
     }
   }
 }
