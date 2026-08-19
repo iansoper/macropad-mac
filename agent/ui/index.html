@@ -140,6 +140,28 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
+  /* ------------------------------------------------------ profile head -- */
+  .profile-header {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 12px; margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .profile-header .app-icon { width: 32px; height: 32px; border-radius: 8px; }
+  .ph-info { min-width: 0; flex: 1; }
+  .ph-name { font-size: 15px; font-weight: 620; }
+  .ph-bundle-static { font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+  .ph-bundle-input {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+    border: 1px solid transparent; background: none;
+    padding: 2px 5px; margin: 1px 0 0 -6px; border-radius: 6px;
+    width: 100%;
+  }
+  .ph-bundle-input:hover { border-color: var(--line); }
+  .ph-bundle-input:focus {
+    outline: none; border-color: var(--accent); background: var(--bg);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
   /* ------------------------------------------------------------ grid -- */
   .grid {
     display: grid; grid-template-columns: repeat(3, 1fr);
@@ -293,14 +315,15 @@
     <div id="profiles"></div>
     <div class="row">
       <button class="btn" id="add-app">+ Add app</button>
-      <button class="btn" id="paste-all-json">Paste JSON</button>
+      <button class="btn" id="paste-all-json">Edit JSON</button>
     </div>
   </div>
 
   <div class="panel">
+    <div class="profile-header" id="profile-header"></div>
     <div class="panel-head">
       <h2 id="grid-title">Keys</h2>
-      <button class="btn ghost" id="paste-profile-json">Paste JSON</button>
+      <button class="btn ghost" id="paste-profile-json">Edit JSON</button>
     </div>
     <div class="grid" id="grid"></div>
     <h2>Encoder</h2>
@@ -331,7 +354,7 @@
 
 <dialog id="json-modal">
   <div class="modal-body">
-    <h3 id="json-modal-title">Paste JSON</h3>
+    <h3 id="json-modal-title">Edit JSON</h3>
     <div class="hint" id="json-modal-hint"></div>
     <div class="field" style="margin-top:12px">
       <textarea id="json-modal-text" spellcheck="false"></textarea>
@@ -475,8 +498,92 @@ function renderProfiles() {
   }
 }
 
+function renderProfileHeader() {
+  const host = $("profile-header");
+  host.innerHTML = "";
+  const isDefault = isDefaultProfile(selectedProfile);
+
+  const icon = appIcon(isDefault ? null : selectedProfile);
+  if (icon) {
+    host.appendChild(icon);
+  } else {
+    const placeholder = document.createElement("span");
+    placeholder.className = "app-icon";
+    host.appendChild(placeholder);
+  }
+
+  const info = document.createElement("div");
+  info.className = "ph-info";
+  const name = document.createElement("div");
+  name.className = "ph-name";
+  name.textContent = profile(selectedProfile).name || selectedProfile;
+  info.appendChild(name);
+
+  if (isDefault) {
+    const sub = document.createElement("div");
+    sub.className = "ph-bundle-static";
+    sub.textContent = "Default profile — applies to every other app";
+    info.appendChild(sub);
+  } else {
+    const bundleInput = document.createElement("input");
+    bundleInput.type = "text";
+    bundleInput.className = "ph-bundle-input";
+    bundleInput.id = "ph-bundle";
+    bundleInput.spellcheck = false;
+    bundleInput.value = selectedProfile;
+    bundleInput.title = "App ID (bundle identifier)";
+    bundleInput.onchange = (e) => {
+      const oldKey = selectedProfile;
+      const newKey = renameProfileKey(oldKey, e.target.value);
+      if (newKey !== oldKey) { selectedProfile = newKey; markDirty(); }
+      renderAll();
+    };
+    info.appendChild(bundleInput);
+  }
+  host.appendChild(info);
+
+  if (!isDefault) {
+    const del = document.createElement("button");
+    del.className = "btn ghost";
+    del.textContent = "Delete app";
+    del.onclick = deleteSelectedApp;
+    host.appendChild(del);
+  }
+}
+
+/** Rename a profile's key (its bundle ID) in place. Returns the key actually
+ *  in effect afterwards — the new one on success, the old one if the rename
+ *  was rejected or a no-op. */
+function renameProfileKey(oldKey, newKeyRaw) {
+  const newKey = String(newKeyRaw || "").trim();
+  if (!newKey) {
+    toast("App ID can't be empty", true);
+    return oldKey;
+  }
+  if (newKey === oldKey) return oldKey;
+  if (config.profiles[newKey]) {
+    toast("An app with that ID already exists", true);
+    return oldKey;
+  }
+  config.profiles[newKey] = config.profiles[oldKey];
+  delete config.profiles[oldKey];
+  if (config.defaultProfile === oldKey) config.defaultProfile = newKey;
+  return newKey;
+}
+
+function deleteSelectedApp() {
+  if (isDefaultProfile(selectedProfile)) return;
+  const name = profile(selectedProfile).name || selectedProfile;
+  if (!confirm(`Delete the "${name}" profile? This can't be undone once saved.`)) return;
+  delete config.profiles[selectedProfile];
+  selectedProfile = defaultProfileKey();
+  selectedSlot = null;
+  markDirty();
+  renderAll();
+}
+
 function renderGrid() {
-  $("grid-title").textContent = "Keys — " + (profile(selectedProfile).name || selectedProfile);
+  $("grid-title").textContent = "Keys";
   const host = $("grid");
   host.innerHTML = "";
 
@@ -722,6 +829,7 @@ function writeSlot(value) {
 
 function renderAll() {
   renderProfiles();
+  renderProfileHeader();
   renderGrid();
   renderEncoder();
   renderInspector();
@@ -896,13 +1004,18 @@ function openJsonModal(mode) {
   const hint = $("json-modal-hint");
   const text = $("json-modal-text");
   if (mode === "all") {
-    title.textContent = "Paste JSON — all apps";
-    hint.textContent = "Replaces the whole configuration. Paste a full profiles.json document.";
+    title.textContent = "Edit JSON — all apps";
+    hint.textContent = "Replaces the whole configuration. Edit a full profiles.json document.";
     text.value = JSON.stringify(config, null, 2);
   } else {
-    title.textContent = "Paste JSON — " + (profile(selectedProfile).name || selectedProfile);
-    hint.textContent = "Replaces this app's name, keys, and encoder mapping.";
-    text.value = JSON.stringify(profile(selectedProfile), null, 2);
+    title.textContent = "Edit JSON — " + (profile(selectedProfile).name || selectedProfile);
+    const obj = isDefaultProfile(selectedProfile)
+      ? profile(selectedProfile)
+      : Object.assign({ bundleId: selectedProfile }, profile(selectedProfile));
+    hint.textContent = isDefaultProfile(selectedProfile)
+      ? "Replaces this profile's name, keys, and encoder mapping."
+      : "Replaces this app's ID, name, keys, and encoder mapping. Changing bundleId renames the app.";
+    text.value = JSON.stringify(obj, null, 2);
   }
   $("json-modal").showModal();
   text.focus();
@@ -917,7 +1030,7 @@ function profileShapeProblem(obj) {
     return "Expected a JSON object for the app profile";
   }
   if (obj.profiles && typeof obj.profiles === "object" && !Array.isArray(obj.profiles)) {
-    return 'That looks like a full config document. Use "Paste JSON" in the Profiles panel instead.';
+    return 'That looks like a full config document. Use "Edit JSON" in the Profiles panel instead.';
   }
   if (!("keys" in obj) && !("encoder" in obj) && !("name" in obj)) {
     const values = Object.values(obj);
@@ -967,14 +1080,34 @@ function applyJsonModal() {
       toast(problem, true);
       return;
     }
-    config.profiles[selectedProfile] = parsed;
+    const body = Object.assign({}, parsed);
+    let targetKey = selectedProfile;
+    if (isDefaultProfile(selectedProfile)) {
+      delete body.bundleId;
+    } else {
+      const rawId = "bundleId" in body ? body.bundleId : selectedProfile;
+      delete body.bundleId;
+      const newId = String(rawId || "").trim();
+      if (!newId) {
+        toast("App ID can't be empty", true);
+        return;
+      }
+      if (newId !== selectedProfile && config.profiles[newId]) {
+        toast("An app with that ID already exists", true);
+        return;
+      }
+      targetKey = newId;
+    }
+    if (targetKey !== selectedProfile) delete config.profiles[selectedProfile];
+    config.profiles[targetKey] = body;
+    selectedProfile = targetKey;
   }
 
   selectedSlot = null;
   markDirty();
   $("json-modal").close();
   renderAll();
-  toast("Pasted — remember to Save");
+  toast("Applied — remember to Save");
 }
 
 function addProfile(bundleId, name) {
