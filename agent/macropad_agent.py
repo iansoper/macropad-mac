@@ -294,15 +294,10 @@ def running_apps():
 
 # ------------------------------------------------------------------- loop ---
 
-def push_layer(port, profile, icon_bits: bytes | None = None):
+def push_layer(port, profile):
     labels = [(k or {}).get("label", "") for k in profile["keys"]]
     colors = [hex_to_int((k or {}).get("color")) for k in profile["keys"]]
     payload = {"t": "layer", "name": profile["name"], "labels": labels, "colors": colors}
-    if icon_bits:
-        # A plain list of row bytes rather than base64 — code.py can read it
-        # straight off the parsed JSON with no binascii import, keeping the
-        # firmware side of this exactly as thin as everything else it does.
-        payload["icon"] = list(icon_bits)
     port.write((json.dumps(payload) + "\n").encode("utf-8"))
 
 
@@ -353,9 +348,7 @@ class Runtime:
         self.buf = bytearray()
         self.current_bundle = object()  # sentinel so the first check always fires
         self.profile = self.config.resolve(None)
-        self.current_icon = None  # 8-byte pad bitmap for self.profile's app, if any
         self._ui_icon_attempted = set()  # bundle IDs already looked up, hit or miss
-        self._pad_icon_cache = {}        # bundle ID -> 8-byte bitmap or None
         self.next_connect = 0.0
         self.last_app_poll = 0.0
         self.last_ping = 0.0
@@ -439,7 +432,7 @@ class Runtime:
         if now - self.last_push > LAYER_REPUSH_INTERVAL:
             self.last_push = now
             try:
-                push_layer(self.port, self.profile, self.current_icon)
+                push_layer(self.port, self.profile)
             except serial.SerialException:
                 self._drop_port()
                 return
@@ -475,39 +468,16 @@ class Runtime:
             return True
         self.current_bundle = bundle_id
         self.profile = self.config.resolve(bundle_id)
-        self.current_icon = self._pad_icon_for(bundle_id)
         self.state.update(
             bundleId=bundle_id, appName=name, profileName=self.profile["name"])
         print(f"[agent] {name} ({bundle_id}) -> {self.profile['name']}")
         try:
-            push_layer(self.port, self.profile, self.current_icon)
+            push_layer(self.port, self.profile)
             self.last_push = now
         except serial.SerialException:
             self._drop_port()
             return False
         return True
-
-    @staticmethod
-    def _fetch_icon(fn, bundle_id, cache):
-        """Try/cache wrapper around an AppKit icon lookup.
-
-        Never let a missing or oddly-shaped app bundle take the agent down —
-        the pad should just show no icon for it.
-        """
-        if bundle_id in cache:
-            return cache[bundle_id]
-        try:
-            result = fn(bundle_id)
-        except Exception as exc:
-            print(f"[agent] icon lookup failed for {bundle_id!r}: {exc}")
-            result = None
-        cache[bundle_id] = result
-        return result
-
-    def _pad_icon_for(self, bundle_id):
-        if not bundle_id:
-            return None
-        return self._fetch_icon(app_icons.pad_bitmap, bundle_id, self._pad_icon_cache)
 
     def _refresh_ui_icons(self, bundle_ids):
         """Populate self.icons for the editor. Cheap once per bundle ID —
@@ -565,7 +535,7 @@ class Runtime:
                 self.pad_spoke = True
                 self.state.update(padSilent=False)
             if handle_message(msg, self.profile) == "hello":
-                push_layer(self.port, self.profile, self.current_icon)
+                push_layer(self.port, self.profile)
                 self.last_push = now
 
 
