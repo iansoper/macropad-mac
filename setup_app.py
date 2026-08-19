@@ -60,7 +60,8 @@ OPTIONS = {
     "packages": ["serial", "pynput", "objc", "Foundation", "AppKit", "WebKit"],
     "includes": [
         # The flat sibling modules.
-        "macropad_agent", "server", "paths", "icon", "loginitem", "editor_window",
+        "macropad_agent", "server", "paths", "icon", "app_icons", "icon_bitmap",
+        "loginitem", "editor_window",
         # Both of these pick a platform backend at runtime, so static
         # analysis never sees them and the app dies at launch with an
         # ImportError that has nowhere to print. This is the single most

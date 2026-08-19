@@ -34,6 +34,7 @@ from AppKit import NSWorkspace
 from Foundation import NSDate, NSRunLoop
 from pynput.keyboard import Controller, Key
 
+import app_icons
 import paths
 import server
 
@@ -293,10 +294,15 @@ def running_apps():
 
 # ------------------------------------------------------------------- loop ---
 
-def push_layer(port, profile):
+def push_layer(port, profile, icon_bits: bytes | None = None):
     labels = [(k or {}).get("label", "") for k in profile["keys"]]
     colors = [hex_to_int((k or {}).get("color")) for k in profile["keys"]]
     payload = {"t": "layer", "name": profile["name"], "labels": labels, "colors": colors}
+    if icon_bits:
+        # A plain list of row bytes rather than base64 — code.py can read it
+        # straight off the parsed JSON with no binascii import, keeping the
+        # firmware side of this exactly as thin as everything else it does.
+        payload["icon"] = list(icon_bits)
     port.write((json.dumps(payload) + "\n").encode("utf-8"))
 
 
@@ -338,6 +344,7 @@ class Runtime:
     def __init__(self, config_path: Path | None = None, pump_runloop: bool = True):
         self.config = Config(config_path or CONFIG_PATH)
         self.state = server.State()
+        self.icons = server.IconStore()  # UI icons; populated on the main loop, read by HTTP threads
         self.pump_runloop = pump_runloop
         self.httpd = None
         self.ui_port = None
@@ -346,6 +353,9 @@ class Runtime:
         self.buf = bytearray()
         self.current_bundle = object()  # sentinel so the first check always fires
         self.profile = self.config.resolve(None)
+        self.current_icon = None  # 8-byte pad bitmap for self.profile's app, if any
+        self._ui_icon_attempted = set()  # bundle IDs already looked up, hit or miss
+        self._pad_icon_cache = {}        # bundle ID -> 8-byte bitmap or None
         self.next_connect = 0.0
         self.last_app_poll = 0.0
         self.last_ping = 0.0
@@ -362,7 +372,7 @@ class Runtime:
             print("[agent] editor disabled (MACROPAD_NO_UI)")
             return
         try:
-            self.httpd = server.serve(self.config.path, self.state)
+            self.httpd = server.serve(self.config.path, self.state, self.icons)
             self.ui_port = self.httpd.server_address[1]
             print(f"[agent] editor on http://127.0.0.1:{self.ui_port}")
         except OSError as exc:
@@ -400,6 +410,7 @@ class Runtime:
 
         if self.config.reload():
             self.current_bundle = object()
+            self._refresh_ui_icons(self.config.data.get("profiles", {}).keys())
 
         if now - self.last_app_poll > APP_POLL_INTERVAL:
             self.last_app_poll = now
@@ -410,7 +421,9 @@ class Runtime:
         # polls on demand, so it runs on a slow cadence of its own.
         if now - self.last_app_list > 5.0:
             self.last_app_list = now
-            self.state.update(runningApps=running_apps())
+            apps = running_apps()
+            self.state.update(runningApps=apps)
+            self._refresh_ui_icons(a["bundleId"] for a in apps)
 
         if now - self.last_ping > PING_INTERVAL:
             self.last_ping = now
@@ -426,7 +439,7 @@ class Runtime:
         if now - self.last_push > LAYER_REPUSH_INTERVAL:
             self.last_push = now
             try:
-                push_layer(self.port, self.profile)
+                push_layer(self.port, self.profile, self.current_icon)
             except serial.SerialException:
                 self._drop_port()
                 return
@@ -462,16 +475,55 @@ class Runtime:
             return True
         self.current_bundle = bundle_id
         self.profile = self.config.resolve(bundle_id)
+        self.current_icon = self._pad_icon_for(bundle_id)
         self.state.update(
             bundleId=bundle_id, appName=name, profileName=self.profile["name"])
         print(f"[agent] {name} ({bundle_id}) -> {self.profile['name']}")
         try:
-            push_layer(self.port, self.profile)
+            push_layer(self.port, self.profile, self.current_icon)
             self.last_push = now
         except serial.SerialException:
             self._drop_port()
             return False
         return True
+
+    @staticmethod
+    def _fetch_icon(fn, bundle_id, cache):
+        """Try/cache wrapper around an AppKit icon lookup.
+
+        Never let a missing or oddly-shaped app bundle take the agent down —
+        the pad should just show no icon for it.
+        """
+        if bundle_id in cache:
+            return cache[bundle_id]
+        try:
+            result = fn(bundle_id)
+        except Exception as exc:
+            print(f"[agent] icon lookup failed for {bundle_id!r}: {exc}")
+            result = None
+        cache[bundle_id] = result
+        return result
+
+    def _pad_icon_for(self, bundle_id):
+        if not bundle_id:
+            return None
+        return self._fetch_icon(app_icons.pad_bitmap, bundle_id, self._pad_icon_cache)
+
+    def _refresh_ui_icons(self, bundle_ids):
+        """Populate self.icons for the editor. Cheap once per bundle ID —
+        _ui_icon_attempted makes every later call for the same ID a no-op.
+        """
+        for bundle_id in bundle_ids:
+            if not bundle_id or bundle_id in self._ui_icon_attempted:
+                continue
+            self._ui_icon_attempted.add(bundle_id)
+            try:
+                png = app_icons.ui_png(bundle_id)
+            except Exception as exc:
+                print(f"[agent] icon lookup failed for {bundle_id!r}: {exc}")
+                continue
+            if png:
+                self.icons.set(bundle_id, png)
 
     def _warn_if_silent(self, now):
         if self.pad_spoke or self.silence_warned:
@@ -513,7 +565,7 @@ class Runtime:
                 self.pad_spoke = True
                 self.state.update(padSilent=False)
             if handle_message(msg, self.profile) == "hello":
-                push_layer(self.port, self.profile)
+                push_layer(self.port, self.profile, self.current_icon)
                 self.last_push = now
 
 

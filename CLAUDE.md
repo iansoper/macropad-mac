@@ -49,9 +49,17 @@ Device → host:
 Host → device:
 
 ```
-{"t":"layer","name":"Figma","labels":[...12],"colors":[...12]}   colors 0xRRGGBB, 0 = off
+{"t":"layer","name":"Figma","labels":[...12],"colors":[...12],"icon":[...8]}
 {"t":"ping"}                      keepalive every 2s
 ```
+
+`colors` is 12 `0xRRGGBB` ints, 0 = off. `icon` is optional: 8 ints, one per
+row top-to-bottom, MSB = leftmost pixel — an 8x8 1-bit silhouette of the
+app's icon drawn in the header next to the name. Omit it (or send a falsy
+value) for the centered, icon-less header layout the pad has always used.
+`agent/icon_bitmap.py` packs it; `agent/app_icons.py` samples the app icon
+via `NSWorkspace` to produce the pixels. There is no room on a 1-bit 128x64
+display for more than a silhouette — don't mistake it for a full icon.
 
 The device treats *any* inbound message as proof of life and marks itself
 disconnected after `HOST_TIMEOUT` (5s) of silence. If you add a message type,
@@ -156,7 +164,9 @@ layer identical to the one it is already showing, so the repeat is free.
 firmware/boot.py         enables usb_cdc.data
 firmware/code.py         event reporting + layer rendering
 agent/macropad_agent.py  Runtime.tick(), app watcher, action executor
-agent/server.py          localhost HTTP API + State snapshot (stdlib only)
+agent/app_icons.py       NSWorkspace icon lookups: UI PNG + pad silhouette
+agent/icon_bitmap.py     packs pad silhouette pixels into wire bytes (stdlib only)
+agent/server.py          localhost HTTP API + State/IconStore snapshots (stdlib only)
 agent/paths.py           source-vs-bundle path resolution (stdlib only)
 agent/app.py             MacroPad.app: NSApplication + menu bar, drives tick()
 agent/editor_window.py   the editor in a WKWebView
@@ -203,6 +213,8 @@ Covered today:
   branch, which running from source never exercises.
 - `tests/test_loginitem.py` — the LaunchAgent plist. It fails at login, hours
   later, with nothing attached to print to, so it is checked here instead.
+- `tests/test_icon_bitmap.py` — the pad silhouette's threshold and bit-packing,
+  the AppKit-free half of turning an app icon into wire bytes.
 
 Still uncovered and worth adding:
 
@@ -240,8 +252,12 @@ the pad.
 
 Working: firmware, agent, app-aware switching, hot reload, launchd, the
 localhost mapping editor (grid editing, fall-through display and override,
-learn mode, app picker, atomic validated saves), and `MacroPad.app` — a menu
-bar build of the same agent with the editor in a WKWebView.
+learn mode, app picker, atomic validated saves, `NSWorkspace` app icons in
+the profile list and app picker), `MacroPad.app` — a menu bar build of the
+same agent with the editor in a WKWebView — and an 8x8 silhouette of the
+frontmost app's icon in the pad's OLED header. **The pad-side icon is
+unverified against hardware; confirm the header layout and legibility on a
+real MacroPad before believing it.**
 
 The editor is served from inside the agent process rather than as a second
 daemon — one thing to launch, one source of truth. It has no build step and no
@@ -258,7 +274,7 @@ a menu bar app installs no main menu to claim those key equivalents — hence no
 it.**
 
 Still open: **learn mode driven from the pad itself** (press a pad key to pick
-the slot), and **app icons in the profile list** via `NSWorkspace`. Also worth
-noting — with no pad connected, `tick()` returns before polling the frontmost
-app, so the menu bar and the editor's app picker stay empty until the pad is
-plugged in. That predates the app but is far more visible in it.
+the slot). Also worth noting — with no pad connected, `tick()` returns before
+polling the frontmost app, so the menu bar and the editor's app picker stay
+empty until the pad is plugged in. That predates the app but is far more
+visible in it.
